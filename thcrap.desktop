@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=thcrap Linux Launcher
+Comment=Launch Touhou games via thcrap with a GUI
+Exec=sh -c 'cd "$(dirname %k)" && python3 thcrap-linux-gui.py'
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Game;
