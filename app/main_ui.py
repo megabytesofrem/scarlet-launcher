@@ -1,11 +1,12 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import os
-import tempfile
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import time
 
 from PyQt6.QtCore import (
-    QProcess, QProcessEnvironment, QThread, QTimer, Qt, QBuffer, QByteArray, pyqtSignal
+    QProcess, QProcessEnvironment, QThread, QTimer, Qt, pyqtSignal
 )
 
 from PyQt6.QtWidgets import (
@@ -13,56 +14,30 @@ from PyQt6.QtWidgets import (
     QWidget, QMessageBox, QProgressBar, QListWidget, QListWidgetItem, QSizePolicy
 )
 
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon
 
-import subprocess
-import shutil
-from rich import print
-from pathlib import Path
+from app.utils import log, extract_icon_from_exe, find_patched_games
 
-thcrap_installation_path = Path(
-    "~/Documents/Coding/thcrap-linux/").expanduser()
+# Installation path to keep things tidy
+installation_path = Path("~/.shrine-loader").expanduser()
+
+# FIXME: Latest thcrap download URL, figure out how to get this automatically later
 thcrap_download_url = "https://github.com/thpatch/thcrap/releases/download/2025-07-06/thcrap.zip"
+
 # If True, place the wine prefix in the thcrap installation directory
 use_selfcontained_wine_pfx = True
-wine_prefix_path = thcrap_installation_path / \
-    ".wine-thcrap" if use_selfcontained_wine_pfx else Path(
-        "~/.wine-thcrap").expanduser()
-
-
-def log(message):
-    print(message)  # Placeholder for logging functionality
-
-
-def extract_icon_from_exe(exe_path) -> QIcon:
-    with tempfile.NamedTemporaryFile(suffix=".ico", delete=False) as tmp:
-        tmp_path = tmp.name
-
-    try:
-        # Extract using wrestool (part of the wine tools)
-        subprocess.run(
-            ["wrestool", "-x", "-t14", "-o", tmp_path, str(exe_path)],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-
-        with open(tmp_path, "rb") as f:
-            icon_bytes = f.read()
-    finally:
-        Path(tmp_path).unlink(missing_ok=True)
-
-    # Convert bytes to a QIcon
-    byte_array = QByteArray(icon_bytes)
-    buffer = QBuffer(byte_array)
-    buffer.open(QBuffer.OpenModeFlag.ReadOnly)
-    pixmap = QPixmap()
-    pixmap.loadFromData(buffer.data(), "ICO")
-    buffer.close()
-    return QIcon(pixmap)
+wine_prefix_path = installation_path / ".wine-thcrap" if use_selfcontained_wine_pfx else Path(
+    "~/.wine-thcrap").expanduser()
 
 
 class WinePrefixWorker(QThread):
+    """
+    Worker thread to setup the wine prefix and install dependencies.
+    """
+
+    # FIXME: This cannot ever be moved to another file because the signals
+    # get messed up if they are not in the same file as 'MainWindow' for some reason.
+
     status_update = pyqtSignal(str)
     finished = pyqtSignal(object, object)
 
@@ -72,12 +47,12 @@ class WinePrefixWorker(QThread):
 
     def run(self):
         env = os.environ.copy()
-        env["WINEPREFIX"] = str(wine_prefix_path)
+        env["WINEPREFIX"] = str(self.wine_prefix_path)
         env["WINEDEBUG"] = "-fixme"
         env["HOME"] = Path.home().as_posix()  # Ensure HOME is set correctly
 
         try:
-            subprocess.run(["mkdir", "-p", str(wine_prefix_path)],
+            subprocess.run(["mkdir", "-p", str(self.wine_prefix_path)],
                            check=True)
 
             subprocess.run(["wine", "wineboot", "--init"], check=True,
@@ -108,7 +83,7 @@ class WinePrefixWorker(QThread):
                 line = line.strip()
                 if line:
                     self.status_update.emit(line)
-                    log(f"[dim]{line}[/dim]")
+                    print(f"{line}")
 
             process.wait()
             if process.returncode != 0:
@@ -122,17 +97,30 @@ class WinePrefixWorker(QThread):
                 False, f"Failed to install Winetricks dependencies: {e}")
 
 
-class THCrapLinuxLauncher(QMainWindow):
-    global thcrap_installation_path, thcrap_download_url, use_selfcontained_wine_pfx, wine_prefix_path
+def relaunch_self():
+    python = sys.executable
+    script = os.path.abspath(__file__)
+
+    # Optional: print/log before restarting
+    print("Relaunching...")
+
+    # Re-executes the current script
+    os.execl(python, python, "-m", "shrine_loader")
+
+
+class MainWindow(QMainWindow):
+    global installation_path, thcrap_download_url, use_selfcontained_wine_pfx, wine_prefix_path
     global log
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("thcrap Linux Launcher")
+        self.setWindowTitle("Shrine Loader")
         self.setGeometry(100, 100, 400, 200)
 
         # Set window icon
-        # self.setWindowIcon(QIcon(QPixmap("icon.png")))
+        icon_path = os.path.join(os.path.dirname(
+            __file__), "resources/icon.png")
+        self.setWindowIcon(QIcon(icon_path))
 
         # Create a central widget
         central_widget = QWidget()
@@ -142,6 +130,9 @@ class THCrapLinuxLauncher(QMainWindow):
         self.layout = QVBoxLayout()
 
         # List of games to launch
+        self.view_container = QVBoxLayout()
+        self.view_container.setContentsMargins(0, 0, 0, 0)
+
         self.list_widget = QListWidget()
         self.list_widget.setSelectionMode(
             QListWidget.SelectionMode.SingleSelection)
@@ -177,6 +168,9 @@ class THCrapLinuxLauncher(QMainWindow):
         self.status_container.addStretch(1)
         self.status_container.addWidget(self.status_bar)
 
+        # Maybe it wasnt initlized before?
+        self.wine_worker = None
+
         self.layout.addLayout(self.status_container)
 
     def show_dialog(self, title, message, icon=QMessageBox.Icon.Information):
@@ -206,7 +200,7 @@ class THCrapLinuxLauncher(QMainWindow):
     def extract_thcrap_files(self):
         try:
             shutil.unpack_archive(
-                thcrap_installation_path / "thcrap.zip", thcrap_installation_path / "thcrap")
+                installation_path / "thcrap.zip", installation_path / "thcrap")
 
             self.show_dialog("Success", "thcrap has been successfully extracted.",
                              icon=QMessageBox.Icon.Information).exec()
@@ -222,56 +216,6 @@ class THCrapLinuxLauncher(QMainWindow):
     def setup_wine_environment(self):
         if not wine_prefix_path.exists():
             self.create_wine_prefix()
-
-    def populate_game_list(self):
-        patched_games = self.find_patched_games()
-        for game in patched_games:
-            try:
-                icon = extract_icon_from_exe(
-                    Path(thcrap_installation_path / "thcrap") / game)
-            except:
-                icon = QIcon()  # Fallback to default icon if extraction fails
-
-            item = QListWidgetItem(game)
-
-            if "custom" in item.text():
-                item.setForeground(Qt.GlobalColor.red)
-                item.setToolTip(
-                    f"Launch the customizer for {item.text().replace('custom_', '')}")
-            else:
-                item.setToolTip(f"Launch {item.text()}")
-
-            item.setIcon(icon)
-            self.list_widget.addItem(item)
-
-        if len(patched_games) > 0:
-            self.layout.addWidget(
-                QLabel("Select a game to launch", self, alignment=Qt.AlignmentFlag.AlignCenter))
-
-            self.layout.addWidget(self.list_widget)
-        else:
-            self.layout.addWidget(QLabel(
-                "No patched games found.", self, alignment=Qt.AlignmentFlag.AlignCenter))
-            self.layout.addWidget(QLabel(
-                "If this is first time setup, please disregard and let the script run.", self, alignment=Qt.AlignmentFlag.AlignCenter))
-
-            log("[bright_red]No patched games found. Please launch thcrap first and perform initial setup.[/bright_red]")
-
-    def find_patched_games(self):
-        # Find patched games in the thcrap installation directory
-        if not Path(thcrap_installation_path / "thcrap").exists():
-            log("[bright_red]thcrap installation path does not exist.[/bright_red]")
-            return []
-
-        patched_games = []
-
-        games = Path(thcrap_installation_path / "thcrap").glob("th* (en).exe")
-        for game in games:
-            log(
-                f"[bright_green]Found patched game: [reset]{game.name}[/reset]")
-            patched_games.append(game.name)
-
-        return patched_games
 
     def create_wine_prefix(self):
         self.status_label.setText("Creating Wine prefix...")
@@ -306,7 +250,7 @@ class THCrapLinuxLauncher(QMainWindow):
         self.symlink_steam_dir()
 
         # Extract thcrap if it doesn't exist, and then launch the customizer for first time setup
-        if not Path(thcrap_installation_path / "thcrap").exists():
+        if not Path(installation_path / "thcrap").exists():
             self.download_extract_thcrap(
                 callback=self.launch_thcrap_customizer)
 
@@ -315,7 +259,7 @@ class THCrapLinuxLauncher(QMainWindow):
 
         # Download thcrap
         progress = subprocess.run(["wget", thcrap_download_url, "-O", str(
-            thcrap_installation_path / "thcrap.zip")], capture_output=True)
+            installation_path / "thcrap.zip")], capture_output=True)
         self.status_label.setText("Downloading thcrap...")
         self.status_bar.setRange(0, 0)  # Set to indeterminate mode
         self.status_bar.setValue(0)
@@ -338,14 +282,53 @@ class THCrapLinuxLauncher(QMainWindow):
         if callback:
             callback()
 
+    def populate_game_list(self):
+        patched_games = find_patched_games(installation_path=installation_path)
+        for game in patched_games:
+            try:
+                icon = extract_icon_from_exe(
+                    Path(installation_path / "thcrap") / game)
+            except:
+                icon = QIcon()  # Fallback to default icon if extraction fails
+
+            item = QListWidgetItem(game)
+
+            if "custom" in item.text():
+                item.setForeground(Qt.GlobalColor.red)
+                item.setToolTip(
+                    f"Launch the customizer for {item.text().replace('custom_', '')}")
+            else:
+                item.setToolTip(f"Launch {item.text()}")
+
+            item.setIcon(icon)
+            self.list_widget.addItem(item)
+
+        if len(patched_games) > 0:
+            self.view_container.addWidget(
+                QLabel("Select a game to launch", self, alignment=Qt.AlignmentFlag.AlignCenter))
+
+            self.view_container.addWidget(self.list_widget)
+        else:
+            self.view_container.addWidget(QLabel(
+                "No patched games found.", self, alignment=Qt.AlignmentFlag.AlignCenter))
+            self.view_container.addWidget(QLabel(
+                "If this is first time setup, please disregard and let the script run.", self, alignment=Qt.AlignmentFlag.AlignCenter))
+
+            log("[bright_red]No patched games found. Please launch thcrap first and perform initial setup.[/bright_red]")
+
+        # Add the view container to the main layout
+        self.layout.addLayout(self.view_container)
+
     def launch_thcrap_customizer(self):
         env = os.environ.copy()
         env["WINEPREFIX"] = str(wine_prefix_path)
         env["HOME"] = Path.home().as_posix()  # Ensure HOME is set correctly
 
+        thcrap_process = None
+
         try:
-            subprocess.Popen(
-                ["wine", str(thcrap_installation_path / "thcrap" / "thcrap.exe")], env=env)
+            thcrap_process = subprocess.Popen(
+                ["wine", str(installation_path / "thcrap" / "thcrap.exe")], env=env)
             log("[bright_yellow]Launching thcrap customizer...[/bright_yellow]")
 
             self.show_dialog("Important", "It is very important that you make sure to select 'thcrap' as the installation path!",
@@ -362,8 +345,22 @@ class THCrapLinuxLauncher(QMainWindow):
             self.status_bar.setRange(0, 1)  # Set to determinate mode
             self.status_bar.setValue(1)
 
+        # Wait for the process to finish
+        if thcrap_process:
+            thcrap_process.wait()
+            if thcrap_process.returncode == 0:
+                # Relaunch ourself to refresh the game list
+                log("[bright_green]thcrap customizer finished successfully.[/bright_green]")
+                self.status_label.setText(
+                    "thcrap customizer finished successfully.")
+                self.status_bar.setRange(0, 1)  # Set to determinate mode
+                self.status_bar.setValue(1)
+
+                time.sleep(1)  # Give some time for the process to finish
+                relaunch_self()
+
     def launch_game(self, item):
-        game_path = thcrap_installation_path / "thcrap" / item.text()
+        game_path = installation_path / "thcrap" / item.text()
 
         env = QProcessEnvironment.systemEnvironment()
         env.insert("WINEPREFIX", str(wine_prefix_path))
@@ -384,15 +381,3 @@ class THCrapLinuxLauncher(QMainWindow):
         except Exception as e:
             self.status_label.setText(f"Failed to launch {item.text()}.")
             log(f"[bright_red]Failed to launch game: {e}[/bright_red]")
-
-
-if __name__ == "__main__":
-    import sys
-    app = QApplication(sys.argv)
-    window = THCrapLinuxLauncher()
-    window.show()
-
-    # Schedule Wine setup after the event loop starts
-    QTimer.singleShot(100, window.setup_wine_environment)
-
-    sys.exit(app.exec())
