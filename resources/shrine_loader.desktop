@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=Shrine Loader
-Comment=Graphical wrapper around thcrap for Linux
-Exec=sh -c 'cd /home/rem/.local/share/shrine-loader && python3 -m shrine_loader'
-Icon=shrine_loader
-Terminal=false
-Type=Application
-Categories=Game;
-StartupWMClass=shrine-loader

@@ -2,6 +2,7 @@ thcrap/
 .wine-thcrap/
 thcrap.zip
 
+resources/shrine_loader.desktop
 __pycache__/
 app/__pycache__/
 *.pyc
