@@ -1,3 +1,4 @@
+import os
 from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtCore import QByteArray, QBuffer, QBuffer
 
@@ -13,6 +14,14 @@ except ImportError:
 
 def log(message):
     print(message)  # Placeholder for logging functionality
+
+
+def get_project_root():
+    path = os.path.abspath(__file__)
+    # assuming your structure is /path/to/shrine-loader/app/main_ui.py
+    # move up one directory from app/
+    root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    return root
 
 
 def extract_icon_from_exe(exe_path) -> QIcon:

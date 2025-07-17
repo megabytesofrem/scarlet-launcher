@@ -8,6 +8,7 @@ ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
 mkdir -p "$APP_DIR" "$BIN_DIR" "$DESKTOP_DIR" "$ICON_DIR"
 
 cp -r app "$APP_DIR/"
+cp -r resources "$APP_DIR/"
 cp shrine_loader.py "$APP_DIR/"
 
 # Create desktop entry

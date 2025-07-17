@@ -12,14 +12,17 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
 
 from app.main_ui import MainWindow
+from app.utils import get_project_root
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Set window icon
     # FIXME: Icon is reset to the default icon on startup when using Wayland
-    icon_path = os.path.join(os.path.dirname(
-        __file__), "resources/icon.png")
+    project_root = get_project_root()
+    icon_path = os.path.join(project_root, "resources", "icon.png")
+
+    print(f"Icon path {icon_path}")
     app.setWindowIcon(QIcon(icon_path))
 
     app.setApplicationName("shrine-loader")

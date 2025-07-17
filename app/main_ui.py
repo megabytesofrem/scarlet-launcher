@@ -14,9 +14,9 @@ from PyQt6.QtWidgets import (
     QWidget, QMessageBox, QProgressBar, QListWidget, QListWidgetItem, QSizePolicy
 )
 
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QPixmap
 
-from app.utils import log, extract_icon_from_exe, find_patched_games
+from app.utils import log, extract_icon_from_exe, find_patched_games, get_project_root
 
 # Installation path to keep things tidy
 installation_path = Path("~/.shrine-loader").expanduser()
@@ -118,8 +118,11 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 400, 200)
 
         # Set window icon
-        icon_path = os.path.join(os.path.dirname(
-            __file__), "resources/icon.png")
+        project_root = get_project_root()
+        icon_path = os.path.join(project_root, "resources", "icon.png")
+
+        print(f"Icon path {icon_path}")
+
         self.setWindowIcon(QIcon(icon_path))
 
         # Create a central widget
@@ -145,7 +148,12 @@ class MainWindow(QMainWindow):
 
         self.layout.addWidget(customize_button := QPushButton(
             "Customize thcrap installation", self))
+
+        self.layout.addWidget(about_button := QPushButton(
+            "About Shrine Loader", self))
+
         customize_button.clicked.connect(self.launch_thcrap_customizer)
+        about_button.clicked.connect(self.show_about)
 
         # Status progress
         self.status_container = QHBoxLayout()
@@ -181,6 +189,29 @@ class MainWindow(QMainWindow):
         dialog.setIcon(icon)
 
         return dialog
+
+    def show_about(self):
+        about = QMessageBox(self)
+        about.setWindowTitle("About Shrine Loader")
+
+        # Set the text in rich HTML format (like Qt About dialogs)
+        about.setText(
+            "<h2>Shrine Loader</h2>"
+            "<p>Graphical wrapper around thcrap for Linux.</p>"
+            "<p>Version 1.0.0</p>"
+            "<p>© 2025 Charlotte (Rem)</p>"
+        )
+
+        project_root = get_project_root()
+        icon_path = os.path.join(project_root, "resources", "icon.png")
+
+        pixmap = QPixmap(icon_path)
+        about.setIconPixmap(pixmap.scaled(64, 64))  # scale if needed
+
+        # Add only the OK button like standard About dialogs
+        about.setStandardButtons(QMessageBox.StandardButton.Ok)
+
+        about.exec()
 
     def symlink_steam_dir(self):
         steamapps_path = Path(
