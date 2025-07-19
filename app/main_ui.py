@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 
 from PyQt6.QtGui import QIcon, QPixmap
 
-from app.utils import log, extract_icon_from_exe, find_patched_games, get_project_root
+from app.utils import log, extract_icon_from_exe, find_patched_games, get_project_root, check_wine_installed
 
 # Installation path to keep things tidy
 installation_path = Path("~/.shrine-loader").expanduser()
@@ -51,10 +51,16 @@ class WinePrefixWorker(QThread):
         env["WINEDEBUG"] = "-fixme"
         env["HOME"] = Path.home().as_posix()  # Ensure HOME is set correctly
 
+        # Check if wine is installed before proceeding
+        is_wine_present, return_message = check_wine_installed() 
+        if not is_wine_present:
+            self.finished.emit(False, return_message)
+            return False
+
         try:
             subprocess.run(["mkdir", "-p", str(self.wine_prefix_path)],
                            check=True)
-
+            
             subprocess.run(["wine", "wineboot", "--init"], check=True,
                            env=env)
         except subprocess.CalledProcessError as e:
@@ -79,16 +85,22 @@ class WinePrefixWorker(QThread):
                 universal_newlines=True
             )
 
-            for line in process.stdout:
-                line = line.strip()
-                if line:
-                    self.status_update.emit(line)
-                    print(f"{line}")
+            if process.stdout is not None:
+                for line in process.stdout:
+                    line = line.strip()
+                    if line:
+                        self.status_update.emit(line)
+                        print(f"{line}")
 
             process.wait()
             if process.returncode != 0:
+
+                # mypy will complain about stdout/stderr being IO[str], we don't care
                 raise subprocess.CalledProcessError(
-                    process.returncode, winetricks_command, output=process.stdout, stderr=process.stderr)
+                    process.returncode, winetricks_command, 
+                    output=process.stdout, # type: ignore[reportOptionalSubscript]
+                    stderr=process.stderr # type: ignore[reportOptionalSubscript]
+                )
 
             self.finished.emit(
                 True, "Winetricks dependencies installed successfully.")
@@ -130,7 +142,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         # Create a vertical layout
-        self.layout = QVBoxLayout()
+        self.layout: QVBoxLayout = QVBoxLayout()
 
         # List of games to launch
         self.view_container = QVBoxLayout()
@@ -160,8 +172,8 @@ class MainWindow(QMainWindow):
         self.status_container.setContentsMargins(0, 0, 0, 0)
         self.status_container.setSpacing(10)
 
-        self.status_label = QLabel(
-            "Waiting for user action", self, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.status_label = QLabel("Waiting for user action", self)
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.status_label.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -233,9 +245,6 @@ class MainWindow(QMainWindow):
             shutil.unpack_archive(
                 installation_path / "thcrap.zip", installation_path / "thcrap")
 
-            self.show_dialog("Success", "thcrap has been successfully extracted.",
-                             icon=QMessageBox.Icon.Information).exec()
-
             self.status_label.setText("thcrap extracted successfully.")
             self.status_bar.setRange(0, 1)  # Set to determinate mode
             self.status_bar.setValue(1)
@@ -255,7 +264,16 @@ class MainWindow(QMainWindow):
         self.wine_worker = WinePrefixWorker(wine_prefix_path)
         self.wine_worker.finished.connect(self.after_wine_ready)
         self.wine_worker.status_update.connect(self.on_wine_status_update)
-        self.wine_worker.start()
+
+        # Check if wine is installed before starting the worker
+        is_wine_present, return_message = check_wine_installed() 
+        if not is_wine_present:
+            self.show_dialog("Error", return_message,
+                             icon=QMessageBox.Icon.Critical).exec()
+
+            return
+        else:
+            self.wine_worker.start()
 
     def on_wine_status_update(self, line):
         # Update the status label with the message from the worker
@@ -336,14 +354,16 @@ class MainWindow(QMainWindow):
 
         if len(patched_games) > 0:
             self.view_container.addWidget(
-                QLabel("Select a game to launch", self, alignment=Qt.AlignmentFlag.AlignCenter))
-
+                label := QLabel("Select a game to launch", self))
+            
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.view_container.addWidget(self.list_widget)
         else:
-            self.view_container.addWidget(QLabel(
-                "No patched games found.", self, alignment=Qt.AlignmentFlag.AlignCenter))
-            self.view_container.addWidget(QLabel(
-                "If this is first time setup, please disregard and let the script run.", self, alignment=Qt.AlignmentFlag.AlignCenter))
+            self.view_container.addWidget(label := QLabel("No patched games found.", self))
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            self.view_container.addWidget(label := QLabel("If this is first time setup, please disregard and let the script run.", self))
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             log("[bright_red]No patched games found. Please launch thcrap first and perform initial setup.[/bright_red]")
 

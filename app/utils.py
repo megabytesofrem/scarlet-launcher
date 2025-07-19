@@ -24,7 +24,20 @@ def get_project_root():
     return root
 
 
-def extract_icon_from_exe(exe_path) -> QIcon:
+def check_wine_installed() -> tuple[bool, str]:
+    from shutil import which
+    wine_tools = ["wine", "wrestool", "winetricks"]
+
+    for tool in wine_tools:
+        if which(tool) is None:
+            log(f"[bright_red]'{tool}' is not installed.[/bright_red]")
+            return False, f"'{tool}' is not installed or not found in PATH."
+        
+    log("[bright_green]Wine and required tools are installed.[/bright_green]")
+    return True, "Wine and required tools are installed."
+
+
+def extract_icon_from_exe(exe_path: Path) -> QIcon:
     with tempfile.NamedTemporaryFile(suffix=".ico", delete=False) as tmp:
         tmp_path = tmp.name
 
