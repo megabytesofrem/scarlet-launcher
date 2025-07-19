@@ -23,6 +23,21 @@ def get_project_root():
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     return root
 
+def get_latest_github_release(repo: str) -> str:
+    try:
+        import requests
+    except ImportError:
+        log("[bright_red]requests module is not installed. Please install it to fetch the latest release.[/bright_red]")
+        return "Error: requests module not installed"
+
+    url = f"https://api.github.com/repos/{repo}/releases/latest"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json().get("name", "No release found")
+    except requests.RequestException as e:
+        return f"Error fetching latest release: {e}"
+
 
 def check_wine_installed() -> tuple[bool, str]:
     from shutil import which

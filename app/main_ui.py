@@ -16,13 +16,19 @@ from PyQt6.QtWidgets import (
 
 from PyQt6.QtGui import QIcon, QPixmap
 
-from app.utils import log, extract_icon_from_exe, find_patched_games, get_project_root, check_wine_installed
+from app.utils import (
+    log, extract_icon_from_exe, find_patched_games, get_project_root, 
+    check_wine_installed, get_latest_github_release
+)
 
 # Installation path to keep things tidy
 installation_path = Path("~/.shrine-loader").expanduser()
+print(f"Installation path: {installation_path}")
 
-# FIXME: Latest thcrap download URL, figure out how to get this automatically later
-thcrap_download_url = "https://github.com/thpatch/thcrap/releases/download/2025-07-06/thcrap.zip"
+# Pull the latest release from GitHub API
+latest_release = get_latest_github_release("thpatch/thcrap")
+thcrap_download_url = f"https://github.com/thpatch/thcrap/releases/download/{latest_release}/thcrap.zip"
+print(f"Latest thcrap download URL: {thcrap_download_url}")
 
 # If True, place the wine prefix in the thcrap installation directory
 use_selfcontained_wine_pfx = True
