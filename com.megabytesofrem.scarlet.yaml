@@ -1,0 +1,50 @@
+app-id: com.megabytesofrem.scarlet
+runtime: org.freedesktop.Platform
+runtime-version: "24.08"
+sdk: org.freedesktop.Sdk
+command: scarlet
+modules:
+  # Build Wine from source and bundle it
+  - name: bundle-wine-icoutils
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+        - --socket=x11
+        - --socket=wayland
+    build-commands:
+      - install -Dm755 scripts/build_flatpak.deps.sh /app/bin/build_flatpak.deps.sh
+      - sh /app/bin/build_flatpak.deps.sh
+    sources:
+      - type: dir
+        path: .
+
+  # Bundle Python dependencies: pyqt6, pyqt6-sip, requests, rich
+  - name: python-dependencies
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+    build-commands:
+      - pip3 install --prefix=/app PyQt6 PyQt6-sip requests rich
+    sources:
+      - type: empty
+
+  # Bundle the application code
+  - name: scarlet
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 scarlet.py /app/bin/scarlet
+      - cp -r app /app/bin/
+      - cp -r resources /app/bin/
+    sources:
+      - type: dir
+        path: .
+
+finish-args:
+  - --share=network
+  - --socket=x11
+  - --socket=wayland
+  - --filesystem=home
+  - --filesystem=host
+  - --env=PATH=/app/wine/bin:/app/bin:/usr/bin

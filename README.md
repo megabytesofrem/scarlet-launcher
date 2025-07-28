@@ -1,10 +1,9 @@
-# Shrine Loader
-Graphical Linux wrapper around the Touhou Community Reliant Automatic Patcher. 
-It automatically sets up a wine prefix and downloads thcrap and displays your games in a pretty list.
+# Scarlet
+Graphical QT Linux wrapper around the Touhou Community Reliant Automatic Patcher. 
 
 ## Usage
 1. Run `scripts/install.sh`
-2. Launch `Shrine Loader` from the application menu
+2. Launch `Scarlet` from the application menu
 3. Allow it to perform first run setup, this will take a time
 4. When the thcrap window appears, you will need to browse to your games from the T: drive.
 

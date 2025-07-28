@@ -22,7 +22,7 @@ from app.utils import (
 )
 
 # Installation path to keep things tidy
-installation_path = Path("~/.shrine-loader").expanduser()
+installation_path = Path("~/.scarlet").expanduser()
 print(f"Installation path: {installation_path}")
 
 # Pull the latest release from GitHub API
@@ -123,7 +123,7 @@ def relaunch_self():
     print("Relaunching...")
 
     # Re-executes the current script
-    os.execl(python, python, "-m", "shrine_loader")
+    os.execl(python, python, "-m", "scarlet")
 
 
 class MainWindow(QMainWindow):
@@ -132,7 +132,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Shrine Loader")
+        self.setWindowTitle("Scarlet")
         self.setGeometry(100, 100, 400, 200)
 
         # Set window icon
@@ -168,7 +168,7 @@ class MainWindow(QMainWindow):
             "Customize thcrap installation", self))
 
         self.layout.addWidget(about_button := QPushButton(
-            "About Shrine Loader", self))
+            "About Scarlet", self))
 
         customize_button.clicked.connect(self.launch_thcrap_customizer)
         about_button.clicked.connect(self.show_about)
@@ -210,14 +210,14 @@ class MainWindow(QMainWindow):
 
     def show_about(self):
         about = QMessageBox(self)
-        about.setWindowTitle("About Shrine Loader")
+        about.setWindowTitle("About Scarlet")
 
         # Set the text in rich HTML format (like Qt About dialogs)
         about.setText(
-            "<h2>Shrine Loader</h2>"
+            "<h2>Scarlet</h2>"
             "<p>Graphical wrapper around thcrap for Linux.</p>"
             "<p>Version 1.0.0</p>"
-            "<p>© 2025 Charlotte (Rem)</p>"
+            "<p>© 2025 megabytesofrem</p>"
         )
 
         project_root = get_project_root()

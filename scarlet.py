@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Shrine Loader
+#
+# Scarlet (formerly Shrine Loader)
 # Graphical Linux wrapper around the Touhou Community Reliant Automatic Patcher.
+#
 
 import os
 import signal
@@ -29,8 +31,8 @@ if __name__ == "__main__":
     print(f"Icon path {icon_path}")
     app.setWindowIcon(QIcon(icon_path))
 
-    app.setApplicationName("shrine-loader")
-    app.setApplicationDisplayName("Shrine Loader")
+    app.setApplicationName("scarlet")
+    app.setApplicationDisplayName("Scarlet")
     app.setOrganizationName("Rem")
 
     window = MainWindow()
