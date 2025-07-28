@@ -1,5 +1,8 @@
-# Scarlet
-Graphical QT Linux wrapper around the Touhou Community Reliant Automatic Patcher. 
+<div align="center">
+  <img width="128px" height="128px" src="resources/icon.png"></img>
+  <h1>Scarlet</h1>
+  <p>Graphical QT Linux wrapper around the Touhou Community Reliant Automatic Patcher. </p>
+</div>
 
 ## Usage
 1. Run `scripts/install.sh`
