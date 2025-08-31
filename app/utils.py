@@ -37,6 +37,12 @@ def get_latest_github_release(repo: str) -> str:
         return response.json().get("name", "No release found")
     except requests.RequestException as e:
         return f"Error fetching latest release: {e}"
+    
+
+def detect_steam_games() -> list[str]:
+    steam_games = []
+    # Logic to detect Steam games goes here
+    return steam_games
 
 
 def check_wine_installed() -> tuple[bool, str]:

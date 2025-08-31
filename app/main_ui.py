@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import shutil
+import sqlite3
 import subprocess
 import sys
 import time
@@ -10,11 +11,14 @@ from PyQt6.QtCore import (
 )
 
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QLabel, QPushButton, QHBoxLayout, QVBoxLayout,
-    QWidget, QMessageBox, QProgressBar, QListWidget, QListWidgetItem, QSizePolicy
+    QApplication, QMainWindow, QLabel, QPushButton, QRadioButton, QHBoxLayout, QVBoxLayout,
+    QWidget, QMessageBox, QProgressBar, QListWidget, QListWidgetItem, QSizePolicy,
+    QDialog, QFileDialog
 )
 
 from PyQt6.QtGui import QIcon, QPixmap
+
+import app.store as store
 
 from app.utils import (
     log, extract_icon_from_exe, find_patched_games, get_project_root, 
@@ -126,6 +130,79 @@ def relaunch_self():
     os.execl(python, python, "-m", "scarlet")
 
 
+class ListItemWidget(QWidget):
+    def __init__(self, game_name, game_icon, trash_cb, parent=None):
+        self.game_name = game_name
+        self.game_icon = game_icon
+
+        super().__init__(parent)
+        layout = QHBoxLayout()
+        layout.setContentsMargins(4, 2, 4, 2)
+        layout.setSpacing(8)
+
+        icon_label = QLabel()
+        icon_label.setPixmap(game_icon.pixmap(24, 24))
+        layout.addWidget(icon_label)
+
+        name_label = QLabel(game_name)
+        layout.addWidget(name_label)
+                
+        layout.addStretch(1)
+
+        # Trash/delete button
+        trash_button = QPushButton()
+        trash_button.setIcon(QIcon.fromTheme("edit-delete"))
+        trash_button.setFixedSize(24, 24)
+        trash_button.setToolTip("Remove this game (does not uninstall)")
+        trash_button.clicked.connect(trash_cb)
+        layout.addWidget(trash_button)
+
+        self.setLayout(layout)
+
+    def get_game_name(self):
+        return self.game_name
+
+    def get_game_icon(self):
+        return self.game_icon
+    
+class UtilDialog(QDialog):
+    selected_option = pyqtSignal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Utilities")
+        self.setGeometry(100, 100, 300, 200)
+        self.setModal(True)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocus()
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(4)
+
+        layout.addWidget(QLabel("Select an option:"))
+
+        layout.setContentsMargins(10, 10, 10, 10)
+
+        self.customizer_option = QPushButton("Launch Customizer", self)
+        self.customizer_option.clicked.connect(self.on_customizer_option_clicked)
+        layout.addWidget(self.customizer_option)
+
+        self.manual_add_option = QPushButton("Add Manually", self)
+        self.manual_add_option.setIcon(QIcon.fromTheme("document-open-folder"))
+        self.manual_add_option.clicked.connect(self.on_manual_add_option_clicked)
+        layout.addWidget(self.manual_add_option)
+
+        layout.addStretch(1)
+        self.setLayout(layout)
+
+    def on_customizer_option_clicked(self):
+        self.selected_option.emit("customizer")
+        self.accept()
+
+    def on_manual_add_option_clicked(self):
+        self.selected_option.emit("manual_add")
+        self.accept()
+
 class MainWindow(QMainWindow):
     global installation_path, thcrap_download_url, use_selfcontained_wine_pfx, wine_prefix_path
     global log
@@ -134,6 +211,15 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Scarlet")
         self.setGeometry(100, 100, 400, 200)
+
+        # Initialize the DB
+        store.create_db_if_needed()
+
+        # At launch, find all thcrap managed games and write them to the DB
+        patched_games = find_patched_games(installation_path=installation_path)
+        for game in patched_games:
+            store.add_game_to_db("thcrap", game, str(Path(installation_path / "thcrap") / game))
+            log(f"Added thcrap managed game to DB: {game}")
 
         # Set window icon
         project_root = get_project_root()
@@ -164,14 +250,20 @@ class MainWindow(QMainWindow):
         # Find patched games and populate the list
         self.populate_game_list()
 
-        self.layout.addWidget(customize_button := QPushButton(
-            "Customize thcrap installation", self))
+        self.button_box = QHBoxLayout()
 
-        self.layout.addWidget(about_button := QPushButton(
+        self.button_box.addWidget(about_button := QPushButton(
             "About Scarlet", self))
+        about_button.setIcon(QIcon.fromTheme("help-about-symbolic"))
 
-        customize_button.clicked.connect(self.launch_thcrap_customizer)
+
+        self.button_box.addWidget(utils_button := QPushButton("Utilities"))
+        utils_button.setIcon(QIcon.fromTheme("settings-symbolic"))
+
+        self.layout.addLayout(self.button_box)
+
         about_button.clicked.connect(self.show_about)
+        utils_button.clicked.connect(self.show_utilities)
 
         # Status progress
         self.status_container = QHBoxLayout()
@@ -208,6 +300,42 @@ class MainWindow(QMainWindow):
 
         return dialog
 
+    def show_utilities(self):
+        dialog = UtilDialog(self)
+        
+        def handle_option_selected(option):
+            if option == "customizer":
+                self.launch_thcrap_customizer()
+            elif option == "manual_add":
+                self.add_manual_game()
+        
+        dialog.selected_option.connect(handle_option_selected)
+        dialog.exec()
+
+    def add_manual_game(self):
+        (file_name, _) = QFileDialog.getOpenFileName(self, "Select Game Executable", "", "Executable Files (*.exe);;All Files (*)")
+        if file_name:
+            # Grab the icon from the exe
+            try:
+                icon = extract_icon_from_exe(Path(file_name))
+            except:
+                icon = QIcon()
+
+            game_name = os.path.basename(file_name)
+            
+            def remove_item():
+                row = self.list_widget.row(item)
+                self.list_widget.takeItem(row)
+                store.remove_game_from_db(game_name)
+
+            store.add_game_to_db("manual", game_name, file_name)
+
+            item = QListWidgetItem()
+            widget = ListItemWidget(game_name, icon, remove_item)
+            item.setSizeHint(widget.sizeHint())
+            self.list_widget.addItem(item)
+            self.list_widget.setItemWidget(item, widget)
+            
     def show_about(self):
         about = QMessageBox(self)
         about.setWindowTitle("About Scarlet")
@@ -258,6 +386,10 @@ class MainWindow(QMainWindow):
             self.show_dialog("Error",
                              f"Failed to extract thcrap: {e}", icon=QMessageBox.Icon.Critical).exec()
             return False
+
+    ## ====================================
+    ## Wine stuff
+    ## ====================================
 
     def setup_wine_environment(self):
         if not wine_prefix_path.exists():
@@ -338,27 +470,29 @@ class MainWindow(QMainWindow):
             callback()
 
     def populate_game_list(self):
-        patched_games = find_patched_games(installation_path=installation_path)
-        for game in patched_games:
+        self.list_widget.clear()
+
+        def make_remove_callback(item_ref, name):
+            def remove_item():
+                self.list_widget.takeItem(self.list_widget.row(item_ref))
+                store.remove_game_from_db(name)
+            return remove_item
+
+        # Populate the game list from the database
+        managed_games = store.load_saved_game_list()
+        for (_, source, name, path) in managed_games:
             try:
-                icon = extract_icon_from_exe(
-                    Path(installation_path / "thcrap") / game)
+                icon = extract_icon_from_exe(Path(path))
             except:
                 icon = QIcon()  # Fallback to default icon if extraction fails
 
-            item = QListWidgetItem(game)
-
-            if "custom" in item.text():
-                item.setForeground(Qt.GlobalColor.red)
-                item.setToolTip(
-                    f"Launch the customizer for {item.text().replace('custom_', '')}")
-            else:
-                item.setToolTip(f"Launch {item.text()}")
-
-            item.setIcon(icon)
+            item = QListWidgetItem()
+            widget = ListItemWidget(name, icon, make_remove_callback(item, name))
+            item.setSizeHint(widget.sizeHint())
             self.list_widget.addItem(item)
+            self.list_widget.setItemWidget(item, widget)
 
-        if len(patched_games) > 0:
+        if len(managed_games) > 0:
             self.view_container.addWidget(
                 label := QLabel("Select a game to launch", self))
             
@@ -417,24 +551,43 @@ class MainWindow(QMainWindow):
                 relaunch_self()
 
     def launch_game(self, item):
-        game_path = installation_path / "thcrap" / item.text()
+        # Look up the selected path
+        item = self.list_widget.currentItem()
+        widget = self.list_widget.itemWidget(item)
 
-        env = QProcessEnvironment.systemEnvironment()
-        env.insert("WINEPREFIX", str(wine_prefix_path))
-        # Ensure HOME is set correctly
-        env.insert("HOME", Path.home().as_posix())
-        env.insert("WINEDEBUG", "-fixme")
+        if isinstance(widget, ListItemWidget):
+            id_, source, name, path = None, None, None, None
+            try: 
+                (id_, source, name, path) = store.get_game_from_db(widget.get_game_name())
+                if not id_:
+                    log(f"[bright_red]Game not found in database: {widget.get_game_name()}[/bright_red]")
+                    return
+            except:
+                log(f"[bright_red]Error retrieving game from database: {widget.get_game_name()}[/bright_red]")
+                return
 
-        try:
-            self.status_label.setText(f"Launching {item.text()}...")
+            if source == "thcrap":
+                game_path = installation_path / "thcrap" / name
+            else:
+                game_path = Path(path)
 
-            process = QProcess(self)
-            process.setProcessEnvironment(env)
-            process.finished.connect(lambda exit_code, _: self.status_label.setText(
-                f"Game launched with exit code {exit_code}."))
-            process.start("wine", [str(game_path)])
-            log(
-                f"[bright_yellow]Launching [reset]{item.text()}[/reset][bright_yellow]...[reset][/reset]")
-        except Exception as e:
-            self.status_label.setText(f"Failed to launch {item.text()}.")
-            log(f"[bright_red]Failed to launch game: {e}[/bright_red]")
+            env = QProcessEnvironment.systemEnvironment()
+            env.insert("WINEPREFIX", str(wine_prefix_path))
+            # Ensure HOME is set correctly
+            env.insert("HOME", Path.home().as_posix())
+            env.insert("WINEDEBUG", "-fixme")
+
+            try:
+                self.status_label.setText(f"Launching {name}...")
+
+                process = QProcess(self)
+                process.setWorkingDirectory(str(game_path.parent))
+                process.setProcessEnvironment(env)
+                process.finished.connect(lambda exit_code, _: self.status_label.setText(
+                    f"Game launched with exit code {exit_code}."))
+                process.start("wine", [str(game_path)])
+                log(
+                    f"[bright_yellow]Launching [reset]{name}[/reset][bright_yellow]...[reset][/reset]")
+            except Exception as e:
+                self.status_label.setText(f"Failed to launch {name}.")
+                log(f"[bright_red]Failed to launch game: {e}[/bright_red]")

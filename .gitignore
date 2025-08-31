@@ -2,6 +2,7 @@ thcrap/
 .wine-thcrap/
 thcrap.zip
 
+managed_games.db
 resources/shrine_loader.desktop
 __pycache__/
 app/__pycache__/
