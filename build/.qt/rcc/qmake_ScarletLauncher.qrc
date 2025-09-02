@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/ScarletLauncher">
+    <file alias="qmldir">/home/rem/Documents/scarlet-launcher-old/build/ScarletLauncher/qmldir</file>
+  </qresource>
+</RCC>
+

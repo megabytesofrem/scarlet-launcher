@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="/ScarletLauncher">/home/rem/Documents/scarlet-launcher-old/build/ScarletLauncher</file>
+
+  </qresource>
+</RCC>

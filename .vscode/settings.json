@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "*.az": "lua",
+        "*.moc": "cpp",
+        "qregularexpression": "cpp",
+        "qjsondocument": "cpp",
+        "qjsonobject": "cpp",
+        "iostream": "cpp",
+        "qqmlcontext": "cpp"
+    }
+}

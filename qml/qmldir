@@ -1,0 +1,2 @@
+module ScarletLauncher
+singleton Theme 1.0 theme/Theme.qml
