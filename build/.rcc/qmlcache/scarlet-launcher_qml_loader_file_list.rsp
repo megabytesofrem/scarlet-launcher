@@ -1,9 +1,0 @@
---resource
-/home/rem/Documents/scarlet-launcher-old/build/.qt/rcc/qmake_ScarletLauncher.qrc
---resource
-/home/rem/Documents/scarlet-launcher-old/build/.qt/rcc/scarlet-launcher_raw_qml_0.qrc
-/ScarletLauncher/qml/main.qml
-/ScarletLauncher/qml/components/Row.qml
-/ScarletLauncher/qml/components/StatusDisplay.qml
-/ScarletLauncher/qml/components/ThemedButton.qml
-/ScarletLauncher/qml/theme/Theme.qml

@@ -1,8 +1,0 @@
-module ScarletLauncher
-typeinfo scarlet-launcher.qmltypes
-prefer :/ScarletLauncher/
-Row 1.0 qml/components/Row.qml
-StatusDisplay 1.0 qml/components/StatusDisplay.qml
-ThemedButton 1.0 qml/components/ThemedButton.qml
-Theme 1.0 qml/theme/Theme.qml
-
