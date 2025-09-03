@@ -1,8 +1,10 @@
-#include "ListModel.h"
+#include "list_model.h"
 #include <QDebug>
 
+namespace scarlet::model {
+
 ListModel::ListModel(QObject* parent)
-    : QAbstractListModel(parent)
+  : QAbstractListModel(parent)
 {
 }
 
@@ -20,15 +22,14 @@ QVariant ListModel::data(const QModelIndex& index, int role) const
     }
 
     const GameInfo& game = m_games[index.row()];
-    qDebug() << "Data requested for index:" << index.row() << "role:" << role << "name:" << game.name;
 
     switch (role) {
-    case NameRole:
-        return game.name;
-    case PathRole:
-        return game.path;
-    case Qt::DisplayRole: // Add DisplayRole support
-        return game.name;
+        case NameRole:
+            return game.name;
+        case PathRole:
+            return game.path;
+        case Qt::DisplayRole: // Add DisplayRole support
+            return game.name;
     }
 
     qDebug() << "Unhandled role:" << role;
@@ -49,7 +50,8 @@ void ListModel::addItem(const QString& name, const QString& path)
     m_games.append({ name, path });
     endInsertRows();
 
-    qDebug() << "Added game:" << name << "at" << path << "Total count:" << m_games.count();
+    qDebug() << "Added game:" << name << "at" << path
+             << "Total count:" << m_games.count();
     emit countChanged();
 }
 
@@ -69,7 +71,6 @@ void ListModel::remove(int index)
 
 int ListModel::count() const
 {
-    qDebug() << "Count requested:" << m_games.count();
     return m_games.count();
 }
 
@@ -85,4 +86,6 @@ QString ListModel::getGamePath(int index) const
     if (index < 0 || index >= m_games.count())
         return QString();
     return m_games[index].path;
+}
+
 }

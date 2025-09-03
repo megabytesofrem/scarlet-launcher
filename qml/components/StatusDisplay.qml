@@ -13,7 +13,7 @@ RowLayout {
     Layout.margins: 5
 
     Text {
-        text: statusValue == "" ? "Status: Not doing anything" : statusValue
+        text: statusValue == "" ? "Status: Idle" : "Status: " + statusValue
         Layout.fillWidth: true
         color: "white"
     }

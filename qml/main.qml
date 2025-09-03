@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 
 import ScarletLauncher 1.0 as Scarlet
 
@@ -11,14 +12,88 @@ ApplicationWindow {
     title: "Scarlet"
     color: Theme.backgroundColor
 
-    // Placeholder
+    palette.highlight: Theme.primaryColor
+
+    property string currentStatus: "Idle"
+    property bool isFirstTimeSetup: false
+    property bool isWorking: false
+
+    // Events
+    Component.onCompleted: {
+        appWindow.appLoaded()
+    }
+
+    // Connect to AppWindow signals    
+    Connections {
+        target: appWindow
+
+        onFirstTimeSetup: isFirstTimeSetup = true
+
+        onStatusChanged: function(status) {
+            currentStatus = status
+        }
+
+        onProgressChanged: function(visible) {
+            isWorking = visible
+        }
+
+        onWineSetupFinished: function(success) {
+            if (success) {
+                // Wine setup completed successfully
+                console.log("Wine setup completed successfully.");
+                isFirstTimeSetup = false;
+            } else {
+                // Wine setup failed
+                console.log("Wine setup failed.");
+            }
+        }
+
+    }
+
+    // Placeholder for first time setup
     ColumnLayout {
-        visible: gameModel.count === 0
+        visible: gameModel.count === 0 && isFirstTimeSetup
         anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.topMargin: 50
         
         spacing: 10
+
+        Text {
+            text: "Scarlet is setting up a Wine prefix..."
+            color: "white"
+            font.pointSize: 16
+            horizontalAlignment: Text.AlignHCenter
+            Layout.alignment: Qt.AlignHCenter
+        }
+
+        Text {
+            text: "This may take a while, so please be patient."
+            wrapMode: Text.WordWrap
+            color: "#aeaeae"
+            font.pointSize: 10
+            horizontalAlignment: Text.AlignHCenter
+            Layout.alignment: Qt.AlignHCenter
+        }
+    }
+
+    // Placeholder for empty games
+    ColumnLayout {
+        visible: gameModel.count === 0 && !isFirstTimeSetup
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.topMargin: 50
+        
+        spacing: 10
+
+        Image {
+            source: "qrc:/ScarletLauncher/resources/icon.png"
+            sourceSize.width: 100
+            sourceSize.height: 100
+            fillMode: Image.PreserveAspectFit
+
+            Layout.alignment: Qt.AlignHCenter
+        }
 
         Text {
             text: "No games were found."
@@ -29,7 +104,7 @@ ApplicationWindow {
         }
 
         Text {
-            text: "If you're unsure, select 'Launch thcrap to scan'"
+            text: "If you're unsure, select 'Find Steam games with THCRAP'"
             color: "#aeaeae"
             font.pointSize: 10
             horizontalAlignment: Text.AlignHCenter
@@ -58,60 +133,25 @@ ApplicationWindow {
                 
                 }
 
-                text: "Launch thcrap to scan"
+                text: "Find Steam games with THCRAP"
                 Layout.alignment: Qt.AlignHCenter
                 onClicked: {
+                    appWindow.launchTHCRAP();
                 }
             }
 
             Scarlet.ThemedButton {
-                text: "Add a game to manage manually"
+                text: "Add game manually"
                 Layout.alignment: Qt.AlignHCenter
                 onClicked: {
-                    // Call your scan function here, e.g.:
-                    // backend.scanForGames()
+                    const file = appWindow.openNativeDialog("Executables (*.exe);;All files (*)")
+                    if (file) {
+                        appWindow.addGameFromPath(file)
+                    }
                 }
             }
         }
     }
-
-    // Dialog {
-    //     id: scanDialog
-    //     title: "No Games Detected"
-    //     visible: gameModel.count === 0
-    //     modal: true
-    //     anchors.centerIn: parent
-    //     spacing: 10
-    //     padding: 10
-
-    //     background: Rectangle {
-    //         color: Theme.backgroundColor.darker(1.2)
-    //         radius: 5
-    //         border.color: Theme.primaryColor.darker(1.2)
-    //         border.width: 2
-    //     }
-
-    //     standardButtons: Dialog.Ok | Dialog.Cancel
-
-    //     onAccepted: {
-    //         // Call your scan function here, e.g.:
-    //         // backend.scanForGames()
-    //     }
-    //     onRejected: {
-    //         // Dialog closes automatically
-    //     }
-
-    //     contentItem: ColumnLayout {
-    //         // Change dialog background to match theme
-
-    //         spacing: 10
-    //         Text {
-    //             text: "No games were found. Would you like to scan for games now?"
-    //             color: "white"
-    //             wrapMode: Text.WordWrap
-    //         }
-    //     }
-    // }
 
     ColumnLayout {
         anchors.fill: parent
@@ -136,8 +176,25 @@ ApplicationWindow {
                 Rectangle {
                     anchors.fill: parent
 
-                    color: highlighted ? Theme.backgroundColor.darker(1.5) // selected color
+                    color: highlighted ? Theme.primaryColor.darker(1.5) // selected color
                                        : Theme.backgroundColor.darker(1.2) // normal color
+
+                    MouseArea {
+                        id: mouseArea
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton
+                        hoverEnabled: false
+                        preventStealing: true
+
+                        onClicked: {
+                            gameList.currentIndex = index
+                        }
+
+                        onDoubleClicked: {
+                            gameList.currentIndex = index
+                            appWindow.launchGame(model.path)
+                        }
+                    }
                 }
 
                 Scarlet.Row {
@@ -157,30 +214,36 @@ ApplicationWindow {
         // Buttons
         RowLayout {
             visible: gameModel.count > 0
-
+            
             spacing: 10
             Layout.margins: 5
 
+            Item { Layout.fillWidth: true }
+
+            Scarlet.ThemedButton {
+                text: "Add Game"
+                onClicked: {
+                    const file = appWindow.openNativeDialog("Executables (*.exe);;All files (*)")
+                    if (file) {
+                        appWindow.addGameFromPath(file)
+                    }
+                }
+            }
+
             Scarlet.ThemedButton {
                 text: "About"
-                Layout.fillWidth: true
                 onClicked: showAbout()
-            }
-            Scarlet.ThemedButton {
-                text: "Utilities"
-                Layout.fillWidth: true
-                onClicked: showUtilities()
             }
         }
 
         // Status display
         Scarlet.StatusDisplay {
-            visible: gameModel.count > 0
+            visible: isWorking || currentStatus !== "Idle"
+            statusValue: currentStatus
             busy: true // bind later on
         }
     }
 
-    // Expose connections
     Connections {
         target: gameModel
     }

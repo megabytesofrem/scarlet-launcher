@@ -8,8 +8,9 @@
 #include <QTemporaryFile>
 #include <QtCore>
 
-namespace Utils {
-bool checkWineInstalled()
+namespace scarlet::utils {
+
+bool isWineInstalled()
 {
     auto wineTools = { "wine", "wrestool", "winetricks" };
     for (const auto& tool : wineTools) {
@@ -18,12 +19,51 @@ bool checkWineInstalled()
             return false;
         }
     }
+
+    return true;
+}
+
+void runCommand(const QString& cmd,
+                const QStringList& args,
+                const QProcessEnvironment& env)
+{
+    QProcess process;
+    process.setProcessEnvironment(env);
+    process.start(cmd, args);
+
+    if (!process.waitForFinished()) {
+        QString errorMsg = process.errorString();
+        qDebug() << "Process error:" << errorMsg;
+
+        return;
+    }
+}
+
+bool downloadFile(const QString& url, const QString& outputPath)
+{
+    QProcess process;
+    process.start("curl", QStringList() << "-L" << "-o" << outputPath << url);
+    if (!process.waitForFinished(5000) || process.exitCode() != 0) {
+        return false;
+    }
+    return true;
+}
+
+bool extractZip(const QString& zipPath, const QString& outputDir)
+{
+    QProcess process;
+    process.start("unzip", QStringList() << "-o" << zipPath << "-d" << outputDir);
+    if (!process.waitForFinished(5000) || process.exitCode() != 0) {
+        return false;
+    }
+    return true;
 }
 
 QString getLatestGithubRelease(const QString& repo)
 {
     QProcess process;
-    process.start("curl", { "-s", "https://api.github.com/repos/" + repo + "/releases/latest" });
+    process.start("curl",
+                  { "-s", "https://api.github.com/repos/" + repo + "/releases/latest" });
     if (!process.waitForFinished(5000) || process.exitCode() != 0) {
         return QString();
     }
@@ -51,7 +91,8 @@ QList<QString> findThcrapPatchedGames(const QString& path)
     }
 
     // Match games ending with (en), they have been patched
-    QRegularExpression re(R"(th.*\(en\)\.exe$)", QRegularExpression::CaseInsensitiveOption);
+    QRegularExpression re(R"(th.*\(en\)\.exe$)",
+                          QRegularExpression::CaseInsensitiveOption);
     QDirIterator iter(path, QDir::Files, QDirIterator::Subdirectories);
 
     while (iter.hasNext()) {
@@ -68,6 +109,7 @@ QIcon extractIconFromExe(const QString& exePath)
 {
     QTemporaryFile tempFile("icon_XXXXXX.ico");
     if (!tempFile.open()) {
+        qDebug() << "Failed to create temp file";
         return QIcon();
     }
 
@@ -78,15 +120,26 @@ QIcon extractIconFromExe(const QString& exePath)
     QProcess proc;
     QStringList args;
     args << "-x" << "-t14" << "-o" << tmpPath << exePath;
+    qDebug() << "Running: wrestool" << args.join(" ");
+
     proc.start("wrestool", args);
 
-    if (proc.waitForFinished(5000) && proc.exitCode() == 0) {
-        QIcon icon(tmpPath);
-        QFile::remove(tmpPath);
-        return icon;
+    if (proc.waitForFinished(5000)) {
+        if (proc.exitCode() == 0) {
+            if (QFile::exists(tmpPath) && QFileInfo(tmpPath).size() > 0) {
+                QIcon icon(tmpPath);
+                QFile::remove(tmpPath);
+                qDebug() << "Icon created successfully, null:" << icon.isNull();
+                return icon;
+            }
+        }
+    } else {
+        qDebug() << "wrestool error:" << proc.errorString();
     }
 
     QFile::remove(tmpPath);
+    qDebug() << "Icon extraction failed";
     return QIcon();
 }
+
 }

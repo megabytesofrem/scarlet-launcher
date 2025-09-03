@@ -1,5 +1,9 @@
 ---
-BasedOnStyle: WebKit
+BasedOnStyle: Mozilla
+ColumnLimit: 90
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
+
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None

@@ -1,24 +1,30 @@
 #pragma once
 
 #include <QAbstractListModel>
+#include <QImage>
 #include <QStringList>
+
+namespace scarlet::model {
 
 /**
  * The Touhou game to launch
  **/
-struct GameInfo {
+struct GameInfo
+{
     QString name;
     QString path;
 };
 
-class ListModel : public QAbstractListModel {
+class ListModel : public QAbstractListModel
+{
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY countChanged)
 
-public:
-    enum Roles {
+  public:
+    enum Roles
+    {
         NameRole = Qt::UserRole + 1,
-        PathRole
+        PathRole,
     };
 
     explicit ListModel(QObject* parent = nullptr);
@@ -35,9 +41,11 @@ public:
     Q_INVOKABLE QString getGameName(int index) const;
     Q_INVOKABLE QString getGamePath(int index) const;
 
-signals:
+  signals:
     void countChanged();
 
-private:
+  private:
     QList<GameInfo> m_games;
 };
+
+}

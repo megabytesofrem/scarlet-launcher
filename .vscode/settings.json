@@ -6,6 +6,23 @@
         "qjsondocument": "cpp",
         "qjsonobject": "cpp",
         "iostream": "cpp",
-        "qqmlcontext": "cpp"
+        "qqmlcontext": "cpp",
+        "qprocess": "cpp",
+        "qprocessenvironment": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp",
+        "qvariant": "cpp",
+        "qquickimageprovider": "cpp",
+        "memory": "cpp",
+        "memory_resource": "cpp",
+        "semaphore": "cpp",
+        "shared_mutex": "cpp",
+        "stop_token": "cpp",
+        "qqmlapplicationengine": "cpp",
+        "qfiledialog": "cpp"
     }
 }

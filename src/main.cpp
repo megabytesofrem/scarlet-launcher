@@ -1,27 +1,35 @@
-#include "model/ListModel.h"
-#include <QGuiApplication>
+#include "app_window.h"
+#include "icon_provider.h"
+#include "model/list_model.h"
+
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QQuickStyle>
+
+using ListModel = scarlet::model::ListModel;
 
 int main(int argc, char* argv[])
 {
-    QGuiApplication app(argc, argv);
+    QApplication app(argc, argv);
+    QQuickStyle::setStyle("Fusion");
+
+    AppWindow appWindow;
 
     // Create the game model
     ListModel gameModel;
-
-    // Add some sample games
-    gameModel.addItem("Sample Game 1", "/path/to/game1");
-    gameModel.addItem("Sample Game 2", "/path/to/game2");
-    gameModel.addItem("Another Game", "/path/to/game3");
 
     QQmlApplicationEngine engine;
 
     // Add import path for Theme module
     engine.addImportPath("qrc:/");
     engine.addImportPath("qrc:/ScarletLauncher/qml");
+    engine.addImageProvider("icons", new IconProvider);
 
     // Register the model with QML
+    appWindow.setModel(&gameModel);
+
+    engine.rootContext()->setContextProperty("appWindow", &appWindow);
     engine.rootContext()->setContextProperty("gameModel", &gameModel);
 
     // Load QML

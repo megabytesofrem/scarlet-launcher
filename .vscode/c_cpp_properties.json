@@ -8,7 +8,11 @@
                 "/usr/include/qt6",
                 "/usr/include/qt6/QtGui",
                 "/usr/include/qt6/QtQml",
-                "${workspaceFolder}/build/scarlet-launcher_autogen/include"
+                "${workspaceFolder}/build/scarlet-launcher_autogen/include",
+                "/usr/include/qt6/QtSql",
+                "/usr/include/qt6/QtQuick",
+                "/usr/include/qt6/QtWidgets",
+                "/usr/include/qt6/QtQuickControls2"
             ],
             "defines": [],
             "compilerPath": "/usr/lib64/ccache/gcc",

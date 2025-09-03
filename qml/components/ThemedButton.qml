@@ -4,6 +4,8 @@ import QtQuick.Controls
 import ScarletLauncher 1.0
 
 Button {
+    padding: 5
+
     background: Rectangle {
         color: Theme.backgroundColor.darker(1.25)
         radius: Theme.buttonRadius
