@@ -1,6 +1,7 @@
 #include "app_window.h"
 #include "icon_provider.h"
 #include "model/list_model.h"
+#include "theme_icon_provider.h"
 
 #include <QApplication>
 #include <QQmlApplicationEngine>
@@ -25,6 +26,7 @@ int main(int argc, char* argv[])
     engine.addImportPath("qrc:/");
     engine.addImportPath("qrc:/ScarletLauncher/qml");
     engine.addImageProvider("icons", new IconProvider);
+    engine.addImageProvider("theme_icon", new ThemeIconProvider);
 
     // Register the model with QML
     appWindow.setModel(&gameModel);

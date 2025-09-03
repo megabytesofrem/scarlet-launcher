@@ -4,6 +4,17 @@ import QtQuick.Controls
 import ScarletLauncher 1.0
 
 Button {
+    property string iconName: ""
+
+    property bool hasIcon: iconName && iconName !== ""
+
+    function getIconSource() {
+        if (hasIcon) {
+            return "image://theme_icon/" + iconName
+        }
+        return ""
+    }
+
     padding: 5
 
     background: Rectangle {
@@ -11,11 +22,23 @@ Button {
         radius: Theme.buttonRadius
     }
 
-    contentItem: Text {
-        text: qsTr(parent.text)
-        color: Theme.textColor
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
+    contentItem: Row {
+        spacing: parent.iconName === "" ? 0 : 4
+
+        Image {
+            visible: hasIcon
+            source: getIconSource()
+            width: hasIcon ? 16 : 0
+            height: 16
+            fillMode: Image.PreserveAspectFit
+        }
+
+        Text {
+            text: qsTr(parent.parent.text)
+            color: Theme.textColor
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+        }
     }
 
     hoverEnabled: true

@@ -12,6 +12,7 @@ qt_add_executable(scarlet-launcher
     src/app_window.cpp
     src/app_window.h
     src/icon_provider.h
+    src/theme_icon_provider.h
     src/main.cpp
     src/model/list_model.cpp
     src/model/list_model.h
@@ -28,13 +29,15 @@ qt_add_qml_module(scarlet-launcher
     VERSION 1.0
     QML_FILES 
         qml/main.qml
-        qml/components/Row.qml
+        qml/components/GameListItem.qml
         qml/components/StatusDisplay.qml
         qml/components/ThemedButton.qml
         qml/theme/Theme.qml
     RESOURCES
         qml/qmldir
         resources/icon.png
+        resources/flag_en.png
+        resources/flag_jp.png
     RESOURCE_PREFIX /
 )
 

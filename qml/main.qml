@@ -197,8 +197,9 @@ ApplicationWindow {
                     }
                 }
 
-                Scarlet.Row {
+                Scarlet.GameListItem {
                     index: index
+                    modelBinding: model
                     onRemoveRequested: function(idx) {
                         gameModel.remove(idx)
                     }
@@ -222,6 +223,7 @@ ApplicationWindow {
 
             Scarlet.ThemedButton {
                 text: "Add Game"
+                iconName: "add"
                 onClicked: {
                     const file = appWindow.openNativeDialog("Executables (*.exe);;All files (*)")
                     if (file) {
@@ -232,6 +234,7 @@ ApplicationWindow {
 
             Scarlet.ThemedButton {
                 text: "About"
+                iconName: "info-symbolic"
                 onClicked: showAbout()
             }
         }

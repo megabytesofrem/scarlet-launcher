@@ -5,9 +5,9 @@ import QtQuick.Layouts
 import ScarletLauncher 1.0
 
 RowLayout {
-    property var gameData: model
-
-    property bool rowHasConfigurator: model.hasConfigurator
+    property var modelBinding  // This gets the model from main.qml
+    property string localization: "jp"
+    property bool rowHasConfigurator: modelBinding ? modelBinding.hasConfigurator : false
     property int index
 
     signal removeRequested(int index)
@@ -25,13 +25,13 @@ RowLayout {
             return getTouhouName(gameId, name);
         }
         
-        return name; // Return original if no th## found
+        return name;
     }
 
     function getTouhouName(gameId, originalName) {
         var gameNames = {
             "th06": "Touhou 6: The Embodiment of Scarlet Devil",
-            "th07": "Touhou 7: Perfect Cherry Blossom", // Fixed this one
+            "th07": "Touhou 7: Perfect Cherry Blossom",
             "th08": "Touhou 8: Imperishable Night",
             "th09": "Touhou 9: Phantasmagoria of Flower View",
             "th10": "Touhou 10: Mountain of Faith",
@@ -51,20 +51,39 @@ RowLayout {
         
         // Add (EN) suffix if original name contains "en"
         if (originalName.toLowerCase().includes("en")) {
-            friendlyName += " (EN)";
+            localization = "en";
         }
         
         return friendlyName;
     }
 
-    Image { 
-        source: "image://icons/" + model.path
+    // Use rectangle to force the size to 24x24
+    Rectangle {
         width: 24
         height: 24
+        color: "transparent"
+
+        Image {
+            anchors.fill: parent
+            source: "qrc:/ScarletLauncher/resources/flag_" + localization + ".png"
+            fillMode: Image.PreserveAspectFit
+        }
+    }
+
+    Rectangle {
+        width: 24
+        height: 24
+        color: "transparent"
+
+        Image {
+            anchors.fill: parent
+            source: modelBinding ? "image://icons/" + modelBinding.path : ""
+            fillMode: Image.PreserveAspectFit
+        }
     }
 
     Text {
-        text: convertFriendlyName(model.name) || "Unknown Game"
+        text: modelBinding ? convertFriendlyName(modelBinding.name) || "Unknown Game" : "Unknown Game"
         color: "white"
         Layout.fillWidth: true
     }
@@ -82,10 +101,12 @@ RowLayout {
             onClicked: {
                 console.log("=== BUTTON CLICK DEBUG ===");
                 console.log("Row index:", index);
-                console.log("Model name:", model.name);
-                console.log("Model path:", model.path);
+                console.log("Model name:", modelBinding ? modelBinding.name : "undefined");
+                console.log("Model path:", modelBinding ? modelBinding.path : "undefined");
                 
-                appWindow.launchConfigurator(model.path)
+                if (modelBinding) {
+                    appWindow.launchConfigurator(modelBinding.path)
+                }
             }
 
             background: Rectangle {
