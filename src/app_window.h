@@ -47,7 +47,7 @@ class AppWindow : public QObject
     QString _installationPath;
     QString _latestRelease;
     QString _thcrapDownloadURL;
-    WineWorker* _wineWorker;
+    WineWorker* _wineWorker = nullptr;
 
     // Wine stuff
     void setupWineEnvironment();

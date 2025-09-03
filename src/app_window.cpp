@@ -49,7 +49,10 @@ Q_INVOKABLE void AppWindow::appLoaded()
 AppWindow::~AppWindow()
 {
     if (this->_wineWorker) {
-        this->_wineWorker->deleteLater();
+        this->_wineWorker->quit();
+        this->_wineWorker->wait(3000);
+        delete this->_wineWorker;
+        this->_wineWorker = nullptr;
     }
 }
 

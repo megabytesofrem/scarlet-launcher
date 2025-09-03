@@ -31,15 +31,18 @@ bool WineWorker::wineboot()
 
 WineWorker::~WineWorker()
 {
-    if (_wineProcess && _wineProcess->state() != QProcess::NotRunning) {
-        _wineProcess->kill();
-        _wineProcess->waitForFinished(3000);
-    }
-
     // Wait for thread to finish
     if (isRunning()) {
         quit();
         wait(5000);
+    }
+
+    // Cleanup
+    if (_wineProcess && _wineProcess->state() != QProcess::NotRunning) {
+        _wineProcess->kill();
+        _wineProcess->waitForFinished(3000);
+        _wineProcess->deleteLater();
+        _wineProcess = nullptr;
     }
 }
 
@@ -159,8 +162,6 @@ void WineWorker::run()
                     emit finished(true, "Winetricks dependencies installed successfully");
                 }
 
-                _wineProcess->deleteLater();
-                _wineProcess = nullptr;
                 quit();
             });
 
