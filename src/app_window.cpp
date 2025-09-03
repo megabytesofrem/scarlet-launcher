@@ -3,6 +3,8 @@
 #include "utils.h"
 
 #include <QFileDialog>
+#include <algorithm>
+#include <vector>
 
 Q_INVOKABLE void AppWindow::appLoaded()
 {
@@ -23,11 +25,15 @@ Q_INVOKABLE void AppWindow::appLoaded()
     // This is only done if it wasn't already done during setup
     QTimer::singleShot(100, this, &AppWindow::createSymlink);
 
-    // Populate the model with games from the DB
+    // Sort by game name
     auto entries = scarlet::store::fetchEntries();
+
+    // Populate the model with games from the DB
     for (const auto& entry : entries) {
         _gameModel->addItem(entry.first, entry.second);
     }
+
+    _gameModel->sortByName();
 
     QString winePrefixPath = this->_installationPath + "/.wine-thcrap";
     qDebug() << "Wine prefix path:" << winePrefixPath;
@@ -124,7 +130,8 @@ Q_INVOKABLE void AppWindow::launchGame(const QString& gamePath)
     gameProcess->start("wine", QStringList() << gamePath);
 
     connect(gameProcess,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            &QProcess::finished,
+            this,
             [this, gameProcess](int exitCode, QProcess::ExitStatus status) {
                 emit statusChanged("Game exited with exit code " +
                                    QString::number(exitCode));
@@ -149,6 +156,8 @@ Q_INVOKABLE void AppWindow::addGameFromPath(const QString& filePath)
     if (this->_gameModel != nullptr) {
         this->_gameModel->addItem(fileName, filePath);
     }
+
+    this->_gameModel->sortByName();
 }
 
 // THCRAP
@@ -176,14 +185,121 @@ Q_INVOKABLE void AppWindow::launchTHCRAP()
     // Use wine to launch thcrap.exe
     thcrapProcess->start("wine", QStringList() << (thcrapPath + "/thcrap.exe"));
 
-    connect(thcrapProcess,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [this, thcrapProcess](int exitCode, QProcess::ExitStatus status) {
-                emit progressChanged(false);
-                emit statusChanged("THCRAP finished");
-                thcrapProcess->deleteLater();
-            });
+    connect(thcrapProcess, &QProcess::finished, this, [this, thcrapProcess]() {
+        emit progressChanged(false);
+        emit statusChanged("THCRAP finished");
+        thcrapProcess->deleteLater();
+    });
 }
+
+// THCRAP configurator
+
+Q_INVOKABLE void AppWindow::launchConfigurator(const QString& gamePath)
+{
+    // Launch the configurator for the specified game
+    qDebug() << "Launching configurator for game at:" << gamePath;
+
+    // Launch through Wine with proper environment
+    QProcess* process = new QProcess(this);
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert("WINEPREFIX", this->_installationPath + "/.wine-thcrap");
+    env.insert("WINEDEBUG", "-fixme");
+
+    // Add thcrap to Wine's PATH so thcrap_loader.exe can be found
+    QString winePath = env.value("PATH");
+    env.insert("PATH", gamePath + ":" + winePath);
+
+    process->setProcessEnvironment(env);
+    process->setWorkingDirectory(QFileInfo(gamePath).absolutePath());
+
+    // Use wine to launch the configurator
+    QString configuratorPath = findConfigurator(gamePath);
+    if (!configuratorPath.isEmpty()) {
+        process->start("wine", QStringList() << configuratorPath);
+    }
+
+    connect(process, &QProcess::finished, this, [this, process]() {
+        emit progressChanged(false);
+        emit statusChanged("THCRAP finished");
+        process->deleteLater();
+    });
+}
+
+QString AppWindow::findConfigurator(const QString& gamePath)
+{
+    QFileInfo fileInfo(gamePath);
+    QDir gameDir = fileInfo.absoluteDir();
+    QStringList files = gameDir.entryList(QDir::Files);
+
+    // Get the base name of the game file (without extension)
+    QString gameBaseName = fileInfo.baseName(); // "th08 (thpatch-en)"
+
+    QRegularExpression configRegex("(custom|config)",
+                                   QRegularExpression::CaseInsensitiveOption);
+
+    QString bestMatch;
+    int bestSimilarity = -1;
+
+    for (const QString& file : files) {
+        if (configRegex.match(file).hasMatch()) {
+            // Calculate similarity based on common characters/patterns
+            int similarity = calculateSimilarity(gameBaseName, file);
+
+            if (similarity > bestSimilarity) {
+                bestSimilarity = similarity;
+                bestMatch = file;
+            }
+        }
+    }
+
+    if (!bestMatch.isEmpty()) {
+        return gameDir.absoluteFilePath(bestMatch);
+    }
+
+    return QString();
+}
+
+// TODO: DRY, move this to a common class so it can be shared between app_window.cpp and
+// list_model.cpp
+int AppWindow::calculateSimilarity(const QString& gameName, const QString& fileName)
+{
+    QString gameBase = gameName.toLower();
+    QString fileBase = QFileInfo(fileName).baseName().toLower();
+
+    // Remove common words that don't matter for matching
+    gameBase.remove("(thpatch-en)").remove("thpatch").remove("en").simplified();
+    fileBase.remove("(thpatch-en)").remove("thpatch").remove("en").simplified();
+
+    int score = 0;
+
+    // High score for exact substring match
+    if (fileBase.contains(gameBase) || gameBase.contains(fileBase)) {
+        score += 100;
+    }
+
+    // Score for common prefixes (th08, th07, etc.)
+    QRegularExpression thPattern("th\\d{2}");
+    auto gameMatch = thPattern.match(gameBase);
+    auto fileMatch = thPattern.match(fileBase);
+
+    if (gameMatch.hasMatch() && fileMatch.hasMatch()) {
+        if (gameMatch.captured(0) == fileMatch.captured(0)) {
+            score += 50; // Same th## number
+        }
+    }
+
+    // Score for character overlap
+    for (int i = 0; i < gameBase.length(); i++) {
+        if (fileBase.contains(gameBase[i])) {
+            score += 1;
+        }
+    }
+
+    qDebug() << "Similarity between" << gameName << "and" << fileName << ":" << score;
+    return score;
+}
+
+// End of THCRAP
 
 void AppWindow::createSymlink()
 {
@@ -194,7 +310,6 @@ void AppWindow::createSymlink()
 
     // Debug: Check if Wine prefix exists
     if (!QDir(winePrefixPath + "/drive_c").exists()) {
-        qDebug() << "Wine drive_c doesn't exist yet:" << winePrefixPath + "/drive_c";
         emit statusChanged("Wine prefix not ready for Steam symlink");
         return;
     }

@@ -23,7 +23,11 @@ class AppWindow : public QObject
     Q_INVOKABLE void launchTHCRAP();
     Q_INVOKABLE void launchGame(const QString& gamePath);
 
+    // Configurator stuff
+    Q_INVOKABLE void launchConfigurator(const QString& gamePath);
+
     void setModel(scarlet::model::ListModel* model) { this->_gameModel = model; }
+    scarlet::model::ListModel* getModel() const { return this->_gameModel; }
 
   signals:
     void firstTimeSetup();
@@ -50,4 +54,7 @@ class AppWindow : public QObject
     void createWinePrefix();
     void createSymlink();
     void downloadTHCRAP();
+
+    QString findConfigurator(const QString& gamePath);
+    int calculateSimilarity(const QString& gameName, const QString& fileName);
 };

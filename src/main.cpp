@@ -29,6 +29,9 @@ int main(int argc, char* argv[])
     // Register the model with QML
     appWindow.setModel(&gameModel);
 
+    // Set the icon
+    app.setWindowIcon(QIcon("qrc:/ScarletLauncher/resources/icon.png"));
+
     engine.rootContext()->setContextProperty("appWindow", &appWindow);
     engine.rootContext()->setContextProperty("gameModel", &gameModel);
 

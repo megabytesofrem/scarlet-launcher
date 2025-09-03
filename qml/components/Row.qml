@@ -6,6 +6,8 @@ import ScarletLauncher 1.0
 
 RowLayout {
     property var gameData: model
+
+    property bool rowHasConfigurator: model.hasConfigurator
     property int index
 
     signal removeRequested(int index)
@@ -66,17 +68,44 @@ RowLayout {
         color: "white"
         Layout.fillWidth: true
     }
-    Button {
-        icon.name: "edit-delete"
-        icon.color: "red"
-        Layout.fillHeight: true
-        Layout.preferredWidth: height
 
-        onClicked: removeRequested(index)
+    RowLayout {
+        spacing: 0
 
-        background: Rectangle {
-            color: Theme.backgroundColor.darker(1.2)
-            height: parent.height
+        Button {
+            icon.name: "settings-configure"
+            icon.color: "white"
+            visible: rowHasConfigurator
+            Layout.fillHeight: true
+            Layout.preferredWidth: height
+
+            onClicked: {
+                console.log("=== BUTTON CLICK DEBUG ===");
+                console.log("Row index:", index);
+                console.log("Model name:", model.name);
+                console.log("Model path:", model.path);
+                
+                appWindow.launchConfigurator(model.path)
+            }
+
+            background: Rectangle {
+                color: Theme.backgroundColor.darker(1.2)
+                height: parent.height
+            }
+        }
+
+        Button {
+            icon.name: "edit-delete"
+            icon.color: "red"
+            Layout.fillHeight: true
+            Layout.preferredWidth: height
+
+            onClicked: removeRequested(index)
+
+            background: Rectangle {
+                color: Theme.backgroundColor.darker(1.2)
+                height: parent.height
+            }
         }
     }
 }

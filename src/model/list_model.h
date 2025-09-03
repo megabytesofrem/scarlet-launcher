@@ -13,6 +13,7 @@ struct GameInfo
 {
     QString name;
     QString path;
+    bool hasConfigurator = false;
 };
 
 class ListModel : public QAbstractListModel
@@ -25,6 +26,7 @@ class ListModel : public QAbstractListModel
     {
         NameRole = Qt::UserRole + 1,
         PathRole,
+        HasConfiguratorRole
     };
 
     explicit ListModel(QObject* parent = nullptr);
@@ -38,6 +40,7 @@ class ListModel : public QAbstractListModel
     Q_INVOKABLE void addItem(const QString& name, const QString& path);
     Q_INVOKABLE void remove(int index);
     Q_INVOKABLE int count() const;
+    void sortByName();
     Q_INVOKABLE QString getGameName(int index) const;
     Q_INVOKABLE QString getGamePath(int index) const;
 
@@ -46,6 +49,9 @@ class ListModel : public QAbstractListModel
 
   private:
     QList<GameInfo> m_games;
+
+    bool checkForConfigurator(const QString& path);
+    int calculateSimilarity(const QString& gameName, const QString& fileName);
 };
 
 }
