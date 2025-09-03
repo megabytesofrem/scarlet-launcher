@@ -5,12 +5,18 @@ import QtQuick.Layouts
 import ScarletLauncher 1.0
 
 RowLayout {
-    property var modelBinding  // This gets the model from main.qml
+    // Model binding from main.qml
+    property var modelBinding
+    
+    // Localization. Default is jp, but will be changed when auto-detected
     property string localization: "jp"
+    
+    // Indicates if the game is not a Touhou game, incase the user made a mistake
+    property bool notTouhou: false
     property bool rowHasConfigurator: modelBinding ? modelBinding.hasConfigurator : false
     property int index
 
-    signal removeRequested(int index)
+    signal removeRequested(string gamePath)
 
     anchors.fill: parent
     height: 30
@@ -22,7 +28,11 @@ RowLayout {
         var match = name.match(/th(\d{2})/i);
         if (match) {
             var gameId = "th" + match[1];
+            notTouhou = false;
             return getTouhouName(gameId, name);
+        } else {
+            // Not a touhou game, mark it as such
+            notTouhou = true;
         }
         
         return name;
@@ -63,11 +73,28 @@ RowLayout {
         height: 24
         color: "transparent"
 
+        MouseArea {
+            id: iconHoverArea
+            anchors.fill: parent
+            hoverEnabled: true
+        }
+
         Image {
             anchors.fill: parent
-            source: "qrc:/ScarletLauncher/resources/flag_" + localization + ".png"
+            source: {
+                if (notTouhou) {
+                    return "qrc:/ScarletLauncher/resources/ui/icon_warning.png"
+                }
+                return "qrc:/ScarletLauncher/resources/ui/flag_" + localization + ".png"
+            }
             fillMode: Image.PreserveAspectFit
         }
+
+        // Tooltip
+        ToolTip.visible: iconHoverArea.containsMouse
+        ToolTip.text: notTouhou ? "This game does not appear to be a Touhou game." 
+                                : localization == "jp" 
+                                ? "Original localization" : "THCRAP localization (" + localization + ")"
     }
 
     Rectangle {
@@ -121,7 +148,7 @@ RowLayout {
             Layout.fillHeight: true
             Layout.preferredWidth: height
 
-            onClicked: removeRequested(index)
+            onClicked: removeRequested(modelBinding.path)
 
             background: Rectangle {
                 color: Theme.backgroundColor.darker(1.2)

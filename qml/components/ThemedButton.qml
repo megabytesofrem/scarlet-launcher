@@ -6,6 +6,7 @@ import ScarletLauncher 1.0
 Button {
     property string iconName: ""
 
+    property bool primaryAction: false
     property bool hasIcon: iconName && iconName !== ""
 
     function getIconSource() {
@@ -18,7 +19,7 @@ Button {
     padding: 5
 
     background: Rectangle {
-        color: Theme.backgroundColor.darker(1.25)
+        color: primaryAction ? Theme.primaryColor.darker(1.25) : Theme.backgroundColor.darker(1.25)
         radius: Theme.buttonRadius
     }
 
@@ -44,10 +45,18 @@ Button {
     hoverEnabled: true
 
     onHoveredChanged: {
-        background.color = hovered ? Theme.backgroundColor.lighter(1.2) : Theme.backgroundColor.darker(1.25)
+        if (primaryAction) {
+            background.color = hovered ? Theme.primaryColor.lighter(1.2) : Theme.primaryColor.darker(1.25)
+        } else {
+            background.color = hovered ? Theme.backgroundColor.lighter(1.2) : Theme.backgroundColor.darker(1.25)
+        }
     }
 
     onPressedChanged: {
-        background.color = pressed ? Theme.backgroundColor.lighter(1.2) : Theme.backgroundColor.darker(1.25)
+        if (primaryAction) {
+            background.color = pressed ? Theme.primaryColor.lighter(1.2) : Theme.primaryColor.darker(1.25)
+        } else {
+            background.color = pressed ? Theme.backgroundColor.lighter(1.2) : Theme.backgroundColor.darker(1.25)
+        }
     }
 }

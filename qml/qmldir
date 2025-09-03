@@ -1,2 +1,14 @@
 module ScarletLauncher
+
+# Theme singleton
 singleton Theme 1.0 theme/Theme.qml
+
+# Views
+About 1.0 views/About.qml
+EmptyGamesView 1.0 views/EmptyGamesView.qml
+FirstTimeSetupView 1.0 views/FirstTimeSetupView.qml
+
+# Components
+GameListItem 1.0 components/GameListItem.qml
+StatusDisplay 1.0 components/StatusDisplay.qml
+ThemedButton 1.0 components/ThemedButton.qml

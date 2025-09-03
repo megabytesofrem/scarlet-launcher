@@ -132,28 +132,40 @@ bool ListModel::checkForConfigurator(const QString& path)
     // Get the base name of the game file (without extension)
     QString gameBaseName = fileInfo.baseName(); // "th08 (thpatch-en)"
 
-    QRegularExpression configRegex("(custom|config)",
-                                   QRegularExpression::CaseInsensitiveOption);
+    QRegularExpression languages("(en|fr|it|de|gr|es|pt|nl|uk|ru|cn)",
+                                 QRegularExpression::CaseInsensitiveOption);
+    bool isJP = !gameBaseName.contains(languages);
 
-    QString bestMatch;
-    int bestSimilarity = -1;
+    if (!isJP) {
+        QRegularExpression configRegex("(custom|config)",
+                                       QRegularExpression::CaseInsensitiveOption);
 
-    for (const QString& file : files) {
-        if (configRegex.match(file).hasMatch()) {
-            // Calculate similarity based on common characters/patterns
-            int similarity = calculateSimilarity(gameBaseName, file);
+        QString bestMatch;
+        int bestSimilarity = -1;
 
-            if (similarity > bestSimilarity) {
-                bestSimilarity = similarity;
-                bestMatch = file;
+        for (const QString& file : files) {
+            if (configRegex.match(file).hasMatch()) {
+                // Calculate similarity based on common characters/patterns
+                int similarity = calculateSimilarity(gameBaseName, file);
+
+                if (similarity > bestSimilarity) {
+                    bestSimilarity = similarity;
+                    bestMatch = file;
+                }
             }
         }
-    }
 
-    if (!bestMatch.isEmpty()) {
-        qDebug() << "Found best configurator match:" << bestMatch << "for"
-                 << gameBaseName;
-        return true;
+        if (!bestMatch.isEmpty()) {
+            qDebug() << "Found best configurator match:" << bestMatch << "for"
+                     << gameBaseName;
+            return true;
+        }
+    } else {
+        // config.exe is the filename for a standard Touhou game
+        if (QFileInfo::exists(gameDir.filePath("config.exe"))) {
+            qDebug() << "Found config.exe for" << gameBaseName;
+            return true;
+        }
     }
 
     return false;

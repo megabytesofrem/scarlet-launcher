@@ -24,20 +24,25 @@ qt_add_executable(scarlet-launcher
     src/utils.h
 )
 
+# Automatically find all QML files
+file(GLOB_RECURSE QML_SOURCES 
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    "qml/*.qml"
+)
+
+message(STATUS "Found QML files: ${QML_SOURCES}")
+
+
 qt_add_qml_module(scarlet-launcher
     URI ScarletLauncher
     VERSION 1.0
-    QML_FILES 
-        qml/main.qml
-        qml/components/GameListItem.qml
-        qml/components/StatusDisplay.qml
-        qml/components/ThemedButton.qml
-        qml/theme/Theme.qml
+    QML_FILES ${QML_SOURCES}
     RESOURCES
         qml/qmldir
         resources/icon.png
-        resources/flag_en.png
-        resources/flag_jp.png
+        resources/ui/flag_en.png
+        resources/ui/flag_jp.png
+        resources/ui/icon_unknown.png
     RESOURCE_PREFIX /
 )
 

@@ -50,104 +50,63 @@ ApplicationWindow {
 
     }
 
-    // Placeholder for first time setup
-    ColumnLayout {
-        visible: gameModel.count === 0 && isFirstTimeSetup
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.topMargin: 50
-        
-        spacing: 10
+    Scarlet.About { id: aboutDialog }
 
-        Text {
-            text: "Scarlet is setting up a Wine prefix..."
-            color: "white"
-            font.pointSize: 16
-            horizontalAlignment: Text.AlignHCenter
-            Layout.alignment: Qt.AlignHCenter
+    header: ToolBar {
+        padding: 0
+
+        background: Rectangle {
+            color: Theme.backgroundColor.darker(1.5)
+            border.width: 0
         }
 
-        Text {
-            text: "This may take a while, so please be patient."
-            wrapMode: Text.WordWrap
-            color: "#aeaeae"
-            font.pointSize: 10
-            horizontalAlignment: Text.AlignHCenter
-            Layout.alignment: Qt.AlignHCenter
-        }
-    }
+        contentItem: RowLayout {
+            anchors.fill: parent
+            spacing: 0
 
-    // Placeholder for empty games
-    ColumnLayout {
-        visible: gameModel.count === 0 && !isFirstTimeSetup
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        anchors.topMargin: 50
-        
-        spacing: 10
+            ToolButton {
+                id: addButton
+                text: "Add Game"
+                icon.name: "add"
+                padding: 8
 
-        Image {
-            source: "qrc:/ScarletLauncher/resources/icon.png"
-            sourceSize.width: 100
-            sourceSize.height: 100
-            fillMode: Image.PreserveAspectFit
+                // Layout.margins: 8
 
-            Layout.alignment: Qt.AlignHCenter
-        }
-
-        Text {
-            text: "No games were found."
-            color: "white"
-            font.pointSize: 16
-            horizontalAlignment: Text.AlignHCenter
-            Layout.alignment: Qt.AlignHCenter
-        }
-
-        Text {
-            text: "If you're unsure, select 'Find Steam games with THCRAP'"
-            color: "#aeaeae"
-            font.pointSize: 10
-            horizontalAlignment: Text.AlignHCenter
-            Layout.alignment: Qt.AlignHCenter
-        }
-
-        RowLayout {
-            spacing: 10
-            Scarlet.ThemedButton {
-                id: scanButton
-
-                property bool selected;
                 background: Rectangle {
-                    property real animAlpha: 1.0
-
-                    color: Theme.backgroundColor.darker(1.25)
-                    radius: Theme.buttonRadius
-                    border.color: Qt.rgba(Theme.primaryColor.r, Theme.primaryColor.g, Theme.primaryColor.b, animAlpha)
-                
-                    SequentialAnimation on animAlpha {
-                        loops: Animation.Infinite
-                        running: !scanButton.selected
-                        NumberAnimation { to: 0.0; duration: 500; easing.type: Easing.InOutQuad }
-                        NumberAnimation { to: 1.0; duration: 500; easing.type: Easing.InOutQuad }
-                    }
-                
+                    color: Theme.primaryColor.darker(1.25)
                 }
 
-                text: "Find Steam games with THCRAP"
-                Layout.alignment: Qt.AlignHCenter
-                onClicked: {
-                    appWindow.launchTHCRAP();
-                }
-            }
-
-            Scarlet.ThemedButton {
-                text: "Add game manually"
-                Layout.alignment: Qt.AlignHCenter
                 onClicked: {
                     const file = appWindow.openNativeDialog("Executables (*.exe);;All files (*)")
                     if (file) {
                         appWindow.addGameFromPath(file)
                     }
+                }
+            }
+
+            ToolButton {
+                id: relaunchButton
+                text: "Relaunch THCRAP"
+                icon.name: "wine-glass-symbolic"
+                padding: 8
+                visible: gameModel.count > 0 && !isFirstTimeSetup
+                onClicked: {
+                    appWindow.launchTHCRAP()
+                }
+            }
+
+            Item { Layout.fillWidth: true }
+
+            ToolButton {
+                id: aboutButton
+                text: "About"
+                icon.name: "info-symbolic"
+
+                padding: 8
+                rightPadding: 12
+
+                onClicked: {
+                    aboutDialog.open()
                 }
             }
         }
@@ -155,53 +114,88 @@ ApplicationWindow {
 
     ColumnLayout {
         anchors.fill: parent
-        Layout.margins: 5
-        spacing: 10
+        spacing: 0
 
-        // Game list
-        ListView {
-            id: gameList
-            interactive: false
-            visible: gameModel.count > 0
-            model: gameModel
+        // First time setup
+        Loader {
+            active: gameModel.count === 0 && isFirstTimeSetup
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            sourceComponent: Scarlet.FirstTimeSetupView {}
+        }
+
+        // Empty games view
+        Loader {
+            active: gameModel.count === 0 && !isFirstTimeSetup
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            Layout.preferredWidth: active ? implicitWidth : 0
+            Layout.preferredHeight: active ? implicitHeight : 0
+            sourceComponent: Scarlet.EmptyGamesView {}
+        }
+
+        // Game list view
+
+        ScrollView {
+            padding: 0
+            Layout.margins: 5
             Layout.fillHeight: true
             Layout.fillWidth: true
 
-            delegate: ItemDelegate {
-                width: parent ? parent.width : 400
-                height: 30
-                highlighted: ListView.view.currentIndex === index
-                onClicked: ListView.view.currentIndex = index
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                Rectangle {
-                    anchors.fill: parent
+            ListView {
+                id: gameList
+                interactive: true
+                flickableDirection: Flickable.VerticalFlick
+                boundsBehavior: Flickable.StopAtBounds
+                flickDeceleration: 1500    // Make flick stop quickly
+                maximumFlickVelocity: 500  // Reduce flick sensitivity
 
-                    color: highlighted ? Theme.primaryColor.darker(1.5) // selected color
-                                       : Theme.backgroundColor.darker(1.2) // normal color
+                visible: gameModel.count > 0
+                model: gameModel
 
-                    MouseArea {
-                        id: mouseArea
+                delegate: ItemDelegate {
+                    width: parent ? parent.width : 400
+                    height: 30
+                    highlighted: ListView.view.currentIndex === index
+                    onClicked: ListView.view.currentIndex = index
+
+                    Rectangle {
                         anchors.fill: parent
-                        acceptedButtons: Qt.LeftButton
-                        hoverEnabled: false
-                        preventStealing: true
 
-                        onClicked: {
-                            gameList.currentIndex = index
-                        }
+                        color: highlighted ? Theme.primaryColor.darker(1.5) // selected color
+                                           : Theme.backgroundColor.darker(1.2) // normal color
 
-                        onDoubleClicked: {
-                            gameList.currentIndex = index
-                            appWindow.launchGame(model.path)
+                        MouseArea {
+                            id: mouseArea
+                            anchors.fill: parent
+                            acceptedButtons: Qt.LeftButton
+                            hoverEnabled: false
+                            preventStealing: true
+
+                            onClicked: {
+                                gameList.currentIndex = index
+                            }
+
+                            onDoubleClicked: {
+                                gameList.currentIndex = index
+                                appWindow.launchGame(model.path)
+                            }
                         }
                     }
-                }
 
-                Scarlet.GameListItem {
-                    index: index
-                    modelBinding: model
-                    onRemoveRequested: function(idx) {
-                        gameModel.remove(idx)
+                    Scarlet.GameListItem {
+                        index: index
+                        modelBinding: model
+                        onRemoveRequested: function(gamePath) {
+                            for (let i = 0; i < gameModel.count; i++) {
+                                if (gameModel.getGamePath(i) === gamePath) {
+                                    gameModel.remove(i)
+                                    break
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -209,34 +203,8 @@ ApplicationWindow {
 
         // Spacer to push buttons to bottom
         Item {
+            visible: gameModel.count === 0
             Layout.fillHeight: true
-        }
-
-        // Buttons
-        RowLayout {
-            visible: gameModel.count > 0
-            
-            spacing: 10
-            Layout.margins: 5
-
-            Item { Layout.fillWidth: true }
-
-            Scarlet.ThemedButton {
-                text: "Add Game"
-                iconName: "add"
-                onClicked: {
-                    const file = appWindow.openNativeDialog("Executables (*.exe);;All files (*)")
-                    if (file) {
-                        appWindow.addGameFromPath(file)
-                    }
-                }
-            }
-
-            Scarlet.ThemedButton {
-                text: "About"
-                iconName: "info-symbolic"
-                onClicked: showAbout()
-            }
         }
 
         // Status display
