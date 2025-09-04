@@ -51,8 +51,7 @@ AppWindow::~AppWindow()
     if (this->_wineWorker) {
         this->_wineWorker->quit();
         this->_wineWorker->wait(3000);
-        delete this->_wineWorker;
-        this->_wineWorker = nullptr;
+        this->_wineWorker.reset();
     }
 }
 
@@ -62,11 +61,18 @@ void AppWindow::createWinePrefix()
     emit progressChanged(true);
 
     QString winePrefixPath = this->_installationPath + "/.wine-thcrap";
-    this->_wineWorker = new WineWorker(this, winePrefixPath);
+    this->_wineWorker = std::make_unique<WineWorker>(this, winePrefixPath);
+
+    connect(this->_wineWorker.get(),
+            &WineWorker::statusUpdate,
+            this,
+            &AppWindow::onWineStatusUpdate);
 
     connect(
-      this->_wineWorker, &WineWorker::statusUpdate, this, &AppWindow::onWineStatusUpdate);
-    connect(this->_wineWorker, &WineWorker::finished, this, &AppWindow::onWineFinished);
+      this->_wineWorker.get(), &WineWorker::logMessage, this, &AppWindow::appendLog);
+
+    connect(
+      this->_wineWorker.get(), &WineWorker::finished, this, &AppWindow::onWineFinished);
 
     this->_wineWorker->start();
 }

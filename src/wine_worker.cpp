@@ -15,7 +15,7 @@ WineWorker::WineWorker(QObject* parent, const QString& winePrefixPath)
 bool WineWorker::wineboot()
 {
     QStringList args = { "mkdir", "-p", _winePrefixPath };
-    utils::runCommand("mkdir", args, this->_workerEnv);
+    utils::runCommand("mkdir", args, this->getProcessEnvironment());
 
     args = { "wineboot", "--init" };
     if (!utils::isWineInstalled()) {
@@ -23,7 +23,7 @@ bool WineWorker::wineboot()
         return false;
     }
 
-    utils::runCommand("wine", args, this->_workerEnv);
+    utils::runCommand("wine", args, this->getProcessEnvironment());
 
     // All good, we can proceed
     return true;
@@ -50,7 +50,7 @@ void WineWorker::run()
 {
     // Get the environment variables
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("WINEPREFIX", _winePrefixPath);
+    env.insert("WINEPREFIX", this->getWinePrefixPath());
     env.insert("WINEDEBUG", "-fixme");
     env.insert("HOME", QDir::homePath());
 
@@ -69,6 +69,10 @@ void WineWorker::run()
 
     // Logging
 
+    emit logMessage("Winetricks installation started at " +
+                    QDateTime::currentDateTime().toString());
+    emit logMessage("======================================================");
+
     QFile* logFile = new QFile(_winePrefixPath + "/winetricks.log");
     if (logFile->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append)) {
         QTextStream out(logFile);
@@ -86,14 +90,14 @@ void WineWorker::run()
     winetricksArgs << "--unattended" << "--force";
     winetricksArgs << deps; // Append the list directly
 
-    _wineProcess = new QProcess();
-    _wineProcess->setProcessEnvironment(this->_workerEnv);
+    _wineProcess = std::make_unique<QProcess>();
+    _wineProcess->setProcessEnvironment(this->getProcessEnvironment());
 
     // IMPORTANT: Merge stderr into stdout like Python does
     _wineProcess->setProcessChannelMode(QProcess::MergedChannels);
 
     // Connect to readyRead signal for real-time output
-    connect(_wineProcess, &QProcess::readyReadStandardOutput, [this, logFile]() {
+    connect(_wineProcess.get(), &QProcess::readyReadStandardOutput, [this, logFile]() {
         QByteArray data = _wineProcess->readAllStandardOutput();
         if (!data.isEmpty()) {
             // Split by lines and emit each one
@@ -111,7 +115,10 @@ void WineWorker::run()
                       "^(Executing|Downloading|Extracting|Installing|Setting up)"))) {
                     emit statusUpdate(trimmed);
                 }
+
                 qDebug() << trimmed;
+                emit logMessage(trimmed);
+
                 out << trimmed << "\n";
             }
 
@@ -119,54 +126,12 @@ void WineWorker::run()
         }
     });
 
-    connect(_wineProcess,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            [this, logFile](int exitCode, QProcess::ExitStatus exitStatus) {
-                QTextStream out(logFile);
-
-                // Read any remaining output
-                QByteArray remainingOutput = _wineProcess->readAllStandardOutput();
-                if (!remainingOutput.isEmpty()) {
-                    QStringList lines =
-                      QString::fromUtf8(remainingOutput).split('\n', Qt::KeepEmptyParts);
-
-                    for (const QString& line : lines) {
-                        QString trimmed = line.trimmed();
-                        if (!trimmed.isEmpty()) {
-                            emit statusUpdate(trimmed);
-                            qDebug() << trimmed;
-                            out << trimmed << "\n";
-                        }
-                    }
-
-                    out.flush();
-                }
-
-                // Log completion
-                out << "=========================================" << "\n";
-                out << "Winetricks finished with exit code:" << exitCode << "\n";
-                out << "Finished at: " << QDateTime::currentDateTime().toString() << "\n";
-                out << "=========================================" << "\n";
-                out.flush();
-
-                logFile->close();
-                delete logFile;
-
-                qDebug() << "Winetricks finished with exit code:" << exitCode;
-
-                if (exitCode != 0) {
-                    QString errorMsg =
-                      QString("Winetricks failed with exit code %1").arg(exitCode);
-                    emit finished(false, errorMsg);
-                } else {
-                    emit finished(true, "Winetricks dependencies installed successfully");
-                }
-
-                quit();
-            });
+    connect(
+      _wineProcess.get(), &QProcess::finished, this, &WineWorker::onProcessFinished);
 
     emit statusUpdate("Starting winetricks installation...");
     qDebug() << "Running winetricks with args:" << winetricksArgs;
+    emit logMessage("Running winetricks with args: " + winetricksArgs.join(" "));
     _wineProcess->start("winetricks", winetricksArgs);
 
     if (!_wineProcess->waitForStarted(10000)) {
@@ -178,4 +143,65 @@ void WineWorker::run()
 
     // Don't use waitForFinished() - let the signals handle everything
     exec();
+}
+
+// SLOTS
+
+void WineWorker::onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+    QFile* logFile = new QFile(getWinePrefixPath() + "/winetricks.log");
+
+    if (!logFile->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append)) {
+        qWarning() << "Failed to open log file for writing";
+        delete logFile;
+        logFile = nullptr;
+        return;
+    }
+
+    // Get an output stream
+    QTextStream out(logFile);
+
+    // Read any remaining output
+    QByteArray remainingOutput = _wineProcess->readAllStandardOutput();
+    if (!remainingOutput.isEmpty()) {
+        QStringList lines =
+          QString::fromUtf8(remainingOutput).split('\n', Qt::KeepEmptyParts);
+
+        for (const QString& line : lines) {
+            QString trimmed = line.trimmed();
+            if (!trimmed.isEmpty()) {
+                emit statusUpdate(trimmed);
+                qDebug() << trimmed;
+                out << trimmed << "\n";
+            }
+        }
+
+        out.flush();
+    }
+
+    // Log completion
+    out << "=========================================" << "\n";
+    out << "Winetricks finished with exit code:" << exitCode << "\n";
+    out << "Finished at: " << QDateTime::currentDateTime().toString() << "\n";
+    out << "=========================================" << "\n";
+    out.flush();
+
+    emit logMessage("=========================================");
+    emit logMessage("Winetricks finished with exit code:" + QString::number(exitCode));
+    emit logMessage("Finished at: " + QDateTime::currentDateTime().toString());
+    emit logMessage("=========================================");
+
+    logFile->close();
+    delete logFile;
+
+    qDebug() << "Winetricks finished with exit code:" << exitCode;
+
+    if (exitCode != 0) {
+        QString errorMsg = QString("Winetricks failed with exit code %1").arg(exitCode);
+        emit finished(false, errorMsg);
+    } else {
+        emit finished(true, "Winetricks dependencies installed successfully");
+    }
+
+    quit();
 }

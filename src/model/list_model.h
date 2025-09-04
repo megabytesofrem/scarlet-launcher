@@ -14,6 +14,9 @@ struct GameInfo
     QString name;
     QString path;
     bool hasConfigurator = false;
+
+    // List of patches applied e.g vpatch, thprac
+    QStringList patches;
 };
 
 class ListModel : public QAbstractListModel
@@ -26,7 +29,8 @@ class ListModel : public QAbstractListModel
     {
         NameRole = Qt::UserRole + 1,
         PathRole,
-        HasConfiguratorRole
+        HasConfiguratorRole,
+        PatchesRole
     };
 
     explicit ListModel(QObject* parent = nullptr);
@@ -38,6 +42,10 @@ class ListModel : public QAbstractListModel
 
     // Custom methods callable from QML
     Q_INVOKABLE void addItem(const QString& name, const QString& path);
+    Q_INVOKABLE void addItemWithPatches(const QString& name,
+                                        const QString& path,
+                                        const QStringList& patches);
+
     Q_INVOKABLE void remove(int index);
     Q_INVOKABLE int count() const;
     void sortByName();

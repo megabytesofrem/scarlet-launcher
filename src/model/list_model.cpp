@@ -38,6 +38,8 @@ QVariant ListModel::data(const QModelIndex& index, int role) const
             return game.name;
         case HasConfiguratorRole:
             return game.hasConfigurator;
+        case PatchesRole:
+            return game.patches;
     }
 
     qDebug() << "Unhandled role:" << role;
@@ -50,6 +52,7 @@ QHash<int, QByteArray> ListModel::roleNames() const
     roles[NameRole] = "name";
     roles[PathRole] = "path";
     roles[HasConfiguratorRole] = "hasConfigurator";
+    roles[PatchesRole] = "patches";
     return roles;
 }
 
@@ -58,11 +61,26 @@ void ListModel::addItem(const QString& name, const QString& path)
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
     bool hasConfig = checkForConfigurator(path);
 
-    m_games.append({ name, path, hasConfig });
+    m_games.append({ name, path, hasConfig, QStringList() });
     endInsertRows();
 
     qDebug() << "Added game:" << name << "at" << path
              << "Total count:" << m_games.count();
+    emit countChanged();
+}
+
+void ListModel::addItemWithPatches(const QString& name,
+                                   const QString& path,
+                                   const QStringList& patches)
+{
+    beginInsertRows(QModelIndex(), rowCount(), rowCount());
+    bool hasConfig = checkForConfigurator(path);
+
+    m_games.append({ name, path, hasConfig, patches });
+    endInsertRows();
+
+    qDebug() << "Added game with patches:" << name << "at" << path
+             << "Patches:" << patches << "Total count:" << m_games.count();
     emit countChanged();
 }
 

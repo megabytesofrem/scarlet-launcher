@@ -5,13 +5,18 @@
 
 #include <QObject>
 #include <QtCore>
+#include <memory>
 
 class AppWindow : public QObject
 {
     Q_OBJECT
+
+    Q_PROPERTY(QString logMessage READ getLogMessage NOTIFY logMessageChanged)
+
   public:
     explicit AppWindow(QObject* parent = nullptr)
       : QObject(parent)
+      , _gameModel(std::make_unique<scarlet::model::ListModel>())
     {
     }
 
@@ -26,10 +31,13 @@ class AppWindow : public QObject
     // Configurator stuff
     Q_INVOKABLE void launchConfigurator(const QString& gamePath);
 
-    void setModel(scarlet::model::ListModel* model) { this->_gameModel = model; }
-    scarlet::model::ListModel* getModel() const { return this->_gameModel; }
+    void setModel(scarlet::model::ListModel* model) { this->_gameModel.reset(model); }
+    scarlet::model::ListModel* getModel() const { return this->_gameModel.get(); }
+
+    QString getLogMessage() const { return _logMessage; }
 
   signals:
+    void logMessageChanged();
     void firstTimeSetup();
 
     // Wine worker
@@ -41,13 +49,22 @@ class AppWindow : public QObject
     void onWineStatusUpdate(const QString& status);
     void onWineFinished(bool success, const QString& message);
 
+  public slots:
+    void appendLog(const QString& message)
+    {
+        _logMessage += message + "\n";
+        emit logMessageChanged();
+    }
+
   private:
-    scarlet::model::ListModel* _gameModel = nullptr;
+    std::unique_ptr<scarlet::model::ListModel> _gameModel;
 
     QString _installationPath;
     QString _latestRelease;
     QString _thcrapDownloadURL;
-    WineWorker* _wineWorker = nullptr;
+    std::unique_ptr<WineWorker> _wineWorker;
+
+    QString _logMessage;
 
     // Wine stuff
     void setupWineEnvironment();

@@ -69,6 +69,7 @@ ApplicationWindow {
                 text: "Add Game"
                 icon.name: "add"
                 padding: 8
+                visible: !isFirstTimeSetup
 
                 // Layout.margins: 8
 
@@ -119,8 +120,11 @@ ApplicationWindow {
         // First time setup
         Loader {
             active: gameModel.count === 0 && isFirstTimeSetup
-            Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            Layout.fillWidth: active
+            Layout.fillHeight: active
+            Layout.preferredWidth: active ? -1 : 0
+            Layout.preferredHeight: active ? -1 : 0
             sourceComponent: Scarlet.FirstTimeSetupView {}
         }
 
@@ -209,7 +213,7 @@ ApplicationWindow {
 
         // Status display
         Scarlet.StatusDisplay {
-            visible: isWorking || currentStatus !== "Idle"
+            visible: !isFirstTimeSetup && (isWorking || currentStatus !== "Idle")
             statusValue: currentStatus
             busy: true // bind later on
         }

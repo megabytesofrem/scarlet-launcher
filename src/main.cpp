@@ -29,13 +29,13 @@ int main(int argc, char* argv[])
     engine.addImageProvider("theme_icon", new ThemeIconProvider);
 
     // Register the model with QML
-    appWindow.setModel(&gameModel);
+    // appWindow.setModel(&gameModel);
 
     // Set the icon
     app.setWindowIcon(QIcon("qrc:/ScarletLauncher/resources/icon.png"));
 
     engine.rootContext()->setContextProperty("appWindow", &appWindow);
-    engine.rootContext()->setContextProperty("gameModel", &gameModel);
+    engine.rootContext()->setContextProperty("gameModel", appWindow.getModel());
 
     // Load QML
     const QUrl url(QStringLiteral("qrc:/ScarletLauncher/qml/main.qml"));
