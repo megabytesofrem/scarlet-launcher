@@ -46,6 +46,16 @@ inline bool removeEntry(const QString& name)
     return query.exec();
 }
 
+inline bool hasEntry(const QString& name)
+{
+    QSqlQuery query;
+    query.prepare("SELECT COUNT(*) FROM games WHERE name = ?");
+    query.addBindValue(name);
+    query.exec();
+    query.next();
+    return query.value(0).toInt() > 0;
+}
+
 inline QList<QPair<QString, QString>> fetchEntries()
 {
     QList<QPair<QString, QString>> entries;

@@ -34,6 +34,7 @@ class AppWindow : public QObject
     void setModel(scarlet::model::ListModel* model) { this->_gameModel.reset(model); }
     scarlet::model::ListModel* getModel() const { return this->_gameModel.get(); }
 
+    QString getLastSelectedGamePath() const { return _lastSelectedGamePath; }
     QString getLogMessage() const { return _logMessage; }
 
   signals:
@@ -45,9 +46,15 @@ class AppWindow : public QObject
     void progressChanged(bool visible);
     void wineSetupFinished(bool success, const QString& message);
 
+    void thcrapOpened();
+    void thcrapClosed();
+
   private slots:
     void onWineStatusUpdate(const QString& status);
     void onWineFinished(bool success, const QString& message);
+
+    void onThcrapOpened();
+    void onThcrapClosed();
 
   public slots:
     void appendLog(const QString& message)
@@ -64,6 +71,7 @@ class AppWindow : public QObject
     QString _thcrapDownloadURL;
     std::unique_ptr<WineWorker> _wineWorker;
 
+    QString _lastSelectedGamePath;
     QString _logMessage;
 
     // Wine stuff

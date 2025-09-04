@@ -45,6 +45,8 @@ Q_INVOKABLE void AppWindow::appLoaded()
     } else {
         emit statusChanged("Wine prefix already exists.");
     }
+
+    // Connect signals for later on
 }
 
 AppWindow::~AppWindow()
@@ -124,6 +126,9 @@ Q_INVOKABLE void AppWindow::launchGame(const QString& gamePath)
         thcrapPath = this->_installationPath + "/thcrap";
     }
 
+    // Keep track for later, trust me this is important
+    _lastSelectedGamePath = gamePath;
+
     env.insert("WINEPREFIX", this->_installationPath + "/.wine-thcrap");
     env.insert("WINEDEBUG", "-fixme");
 
@@ -186,6 +191,18 @@ Q_INVOKABLE void AppWindow::launchTHCRAP()
     emit statusChanged("Launching THCRAP...");
     emit progressChanged(true);
 
+    // Connect signals first
+    connect(this,
+            &AppWindow::thcrapOpened,
+            this,
+            &AppWindow::onThcrapOpened,
+            Qt::UniqueConnection);
+    connect(this,
+            &AppWindow::thcrapClosed,
+            this,
+            &AppWindow::onThcrapClosed,
+            Qt::UniqueConnection);
+
     // Launch through Wine with proper environment
     QProcess* thcrapProcess = new QProcess(this);
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -193,14 +210,110 @@ Q_INVOKABLE void AppWindow::launchTHCRAP()
     env.insert("WINEDEBUG", "-fixme");
     thcrapProcess->setProcessEnvironment(env);
 
-    // Use wine to launch thcrap.exe
+    // Monitor Wine processes because THCRAP has a launcher
+    QTimer* monitor = new QTimer(this);
+    bool* thcrapRunning = new bool(false);
+
+    connect(monitor, &QTimer::timeout, this, [this, monitor, thcrapRunning]() {
+        // Check for Wine processes
+        QProcess checkProcess;
+        checkProcess.start("pgrep", QStringList() << "-f" << "thcrap.exe");
+        checkProcess.waitForFinished(1000);
+
+        bool isRunning = (checkProcess.exitCode() == 0);
+        qDebug() << "THCRAP process check - isRunning:" << isRunning
+                 << "was running:" << *thcrapRunning;
+
+        if (isRunning && !*thcrapRunning) {
+            *thcrapRunning = true;
+            emit thcrapOpened();
+        } else if (!isRunning && *thcrapRunning) {
+            *thcrapRunning = false;
+            emit thcrapClosed();
+            monitor->stop();
+            monitor->deleteLater();
+        }
+    });
+
+    // Start monitoring after a short delay to allow time to start THCRAP
+    QTimer::singleShot(2000, [monitor]() { monitor->start(1500); });
+
+    // Start the THCRAP process.
+    // Ignore its finished signal since its the initial launcher
     thcrapProcess->start("wine", QStringList() << (thcrapPath + "/thcrap.exe"));
 
     connect(thcrapProcess, &QProcess::finished, this, [this, thcrapProcess]() {
-        emit progressChanged(false);
-        emit statusChanged("THCRAP finished");
         thcrapProcess->deleteLater();
     });
+}
+
+void AppWindow::onThcrapOpened()
+{
+    emit statusChanged("THCRAP launched.");
+}
+
+void AppWindow::onThcrapClosed()
+{
+    qDebug()
+      << "onThcrapClosed called! This should only happen after THCRAP process exits.";
+
+    emit statusChanged("THCRAP closed, searching for games.");
+
+    // Kill any remaining Wine processes
+    QProcess::execute("pkill", QStringList() << "-f" << "wine.*thcrap.*");
+    QProcess::execute("pkill", QStringList() << "-f" << "thcrap.*\\.exe");
+
+    // Scan all directories for thcrap folder
+    // THCRAP can place its modified game files in one of four locations:
+    // 1. On the Desktop
+    // 2. In the Wine start menu
+    // 3. In the game folder
+    // 4. In the thcrap folder we manage
+
+    QString foundPath = "";
+
+    QString desktop = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QString startMenu = QDir::homePath() + "/.local/share/applications/wine/Programs/";
+    QString gamePath = _lastSelectedGamePath + "/thcrap";
+    QString thcrapPath = _installationPath + "/thcrap";
+
+    QStringList searchPaths = { desktop, startMenu, gamePath, thcrapPath };
+    for (const QString& path : searchPaths) {
+        if (QDir(path).exists()) {
+            qDebug() << "Found game folder at:" << path;
+            foundPath = path;
+            break;
+        }
+    }
+
+    if (foundPath != "") {
+        // Scan for games in the thcrap folder
+        QDir searchDir(foundPath);
+
+        QStringList gameFiles = searchDir.entryList(QDir::Files);
+        for (const QString& file : gameFiles) {
+            qDebug() << "Found game file in installation folder:" << file;
+
+            QString fullPath = searchDir.absoluteFilePath(file);
+
+            // Add the game to the model
+            QString fileName = QFileInfo(file).fileName();
+            QString baseName = QFileInfo(fileName).baseName();
+
+            if (this->_gameModel != nullptr) {
+                // Skip files like `thXX_custom` or `thXX_custom (en)`
+                QRegularExpression validTouhouName("^th\\d{2}( \\([a-z]{2}\\))?$");
+                if (validTouhouName.match(baseName).hasMatch() &&
+                    !scarlet::store::hasEntry(fileName)) {
+
+                    this->getModel()->addItem(fileName, fullPath);
+                    scarlet::store::addEntry("thcrap", fileName, fullPath);
+                }
+
+                this->getModel()->sortByName();
+            }
+        }
+    }
 }
 
 // THCRAP configurator
