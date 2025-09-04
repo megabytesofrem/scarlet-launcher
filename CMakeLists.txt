@@ -42,7 +42,8 @@ qt_add_qml_module(scarlet-launcher
         resources/icon.png
         resources/ui/flag_en.png
         resources/ui/flag_jp.png
-        resources/ui/icon_unknown.png
+        resources/ui/icon_default.png
+        resources/ui/icon_warning.png
     RESOURCE_PREFIX /
 )
 

@@ -7,8 +7,8 @@ import ScarletLauncher 1.0 as Scarlet
 
 ApplicationWindow {
     visible: true
-    width: 400
-    height: 300
+    minimumWidth: 500
+    minimumHeight: 300
     title: "Scarlet"
     color: Theme.backgroundColor
 

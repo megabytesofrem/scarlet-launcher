@@ -27,9 +27,15 @@ Dialog {
             }
         }
 
-        Label {
-            text: qsTr("Graphical wrapper around thcrap for Linux.")
-            wrapMode: Text.WordWrap
+        TextArea {
+            text: "THCRAP powered launcher for Touhou games for Linux<br>" +
+                  "written in QT/QML and C++.<br><br>" +
+                  "Scarlet is free software, but if you want to <a href=\"https://liberapay.com/megabytesofrem/donate\">support me you can</a>"
+            color: "white"
+            readOnly: true
+            wrapMode: Text.WrapAnywhere
+            textFormat: TextEdit.RichText
+            onLinkActivated: Qt.openUrlExternally(link)
         }
     }
 }

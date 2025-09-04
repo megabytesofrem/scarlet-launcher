@@ -8,7 +8,7 @@ ColumnLayout {
     spacing: 10
 
     Image {
-        source: "qrc:/ScarletLauncher/resources/icon.png"
+        source: "qrc:/Scarlet/resources/icon.png"
         sourceSize.width: 100
         sourceSize.height: 100
         fillMode: Image.PreserveAspectFit
@@ -25,7 +25,8 @@ ColumnLayout {
     }
 
     Text {
-        text: "If you're unsure, select 'Find Steam games with THCRAP'"
+        text: "If you're unsure, select 'Find Steam games with THCRAP'\n" +
+              "If you have a downloaded executable, select 'Add Manually'."
         color: "#aeaeae"
         font.pointSize: 10
         horizontalAlignment: Text.AlignHCenter
@@ -62,7 +63,8 @@ ColumnLayout {
         }
 
         Scarlet.ThemedButton {
-            text: "Add game manually"
+            text: "Add Manually"
+            iconName: "add"
             Layout.alignment: Qt.AlignHCenter
             onClicked: {
                 const file = appWindow.openNativeDialog("Executables (*.exe);;All files (*)")

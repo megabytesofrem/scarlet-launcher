@@ -140,10 +140,14 @@ RowLayout {
                 color: Theme.backgroundColor.darker(1.2)
                 height: parent.height
             }
+
+            ToolTip.visible: hovered
+            ToolTip.text: "Launch game configurator"
         }
 
+
         Button {
-            icon.name: "edit-delete"
+            icon.name: "list-remove-symbolic"
             icon.color: "red"
             Layout.fillHeight: true
             Layout.preferredWidth: height
@@ -154,6 +158,9 @@ RowLayout {
                 color: Theme.backgroundColor.darker(1.2)
                 height: parent.height
             }
+
+            ToolTip.visible: hovered
+            ToolTip.text: "Remove game (does not uninstall)"
         }
     }
 }

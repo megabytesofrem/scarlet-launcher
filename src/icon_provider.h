@@ -3,6 +3,8 @@
 #include "utils.h"
 
 #include <QIcon>
+#include <QImage>
+#include <QImageReader>
 #include <QQuickImageProvider>
 
 /**
@@ -46,8 +48,14 @@ class IconProvider : public QQuickImageProvider
 
         if (icon.isNull()) {
             qDebug() << "Icon extraction failed, returning default";
-            QImage defaultIcon(24, 24, QImage::Format_ARGB32);
-            defaultIcon.fill(Qt::blue);
+
+            QImageReader reader(":/ScarletLauncher/resources/ui/icon_default.png");
+            reader.setScaledSize(requestedSize.isValid() ? requestedSize : QSize(24, 24));
+
+            QImage defaultIcon = reader.read();
+
+            qDebug() << "QImageReader error:" << reader.errorString();
+
             return defaultIcon;
         }
 
