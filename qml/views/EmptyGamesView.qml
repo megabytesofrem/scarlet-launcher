@@ -13,7 +13,7 @@ ColumnLayout {
 
 
     Image {
-        source: "qrc:/Scarlet/resources/icon.png"
+        source: "qrc:/ScarletLauncher/resources/icon.png"
         sourceSize.width: 100
         sourceSize.height: 100
         fillMode: Image.PreserveAspectFit
