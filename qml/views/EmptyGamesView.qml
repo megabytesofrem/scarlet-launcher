@@ -7,6 +7,11 @@ import ScarletLauncher 1.0 as Scarlet
 ColumnLayout {
     spacing: 10
 
+    Item {
+        Layout.preferredHeight: 32
+    }
+
+
     Image {
         source: "qrc:/Scarlet/resources/icon.png"
         sourceSize.width: 100

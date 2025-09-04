@@ -20,6 +20,7 @@ Q_INVOKABLE void AppWindow::appLoaded()
 
     // Create the DB if needed
     scarlet::store::openDatabase(this->_installationPath + "/scarlet.db");
+    scarlet::store::createTables();
 
     // Symlink Steam to standard Windows location that THCRAP expects
     // This is only done if it wasn't already done during setup
@@ -164,6 +165,7 @@ Q_INVOKABLE void AppWindow::addGameFromPath(const QString& filePath)
 
     if (this->_gameModel != nullptr) {
         this->_gameModel->addItem(fileName, filePath);
+        scarlet::store::addEntry("manual", fileName, filePath);
     }
 
     this->_gameModel->sortByName();

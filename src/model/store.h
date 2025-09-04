@@ -38,6 +38,14 @@ inline bool addEntry(const QString& source, const QString& name, const QString& 
     return query.exec();
 }
 
+inline bool removeEntry(const QString& name)
+{
+    QSqlQuery query;
+    query.prepare("DELETE FROM games WHERE name = ?");
+    query.addBindValue(name);
+    return query.exec();
+}
+
 inline QList<QPair<QString, QString>> fetchEntries()
 {
     QList<QPair<QString, QString>> entries;

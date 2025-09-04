@@ -61,7 +61,7 @@ RowLayout {
         
         // Add (EN) suffix if original name contains "en"
         if (originalName.toLowerCase().includes("en")) {
-            localization = "en";
+            localization = "us";
         }
         
         return friendlyName;
@@ -85,7 +85,7 @@ RowLayout {
                 if (notTouhou) {
                     return "qrc:/ScarletLauncher/resources/ui/icon_warning.png"
                 }
-                return "qrc:/ScarletLauncher/resources/ui/flag_" + localization + ".png"
+                return "https://flagsapi.com/" + localization.toUpperCase() + "/flat/64.png"
             }
             fillMode: Image.PreserveAspectFit
         }

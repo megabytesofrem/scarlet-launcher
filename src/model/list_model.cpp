@@ -1,4 +1,5 @@
 #include "list_model.h"
+#include "store.h"
 #include <QDebug>
 
 #include <QDir>
@@ -93,6 +94,8 @@ void ListModel::remove(int index)
     const QString removedName = m_games[index].name;
     m_games.removeAt(index);
     endRemoveRows();
+
+    scarlet::store::removeEntry(removedName);
 
     qDebug() << "Removed game:" << removedName;
     emit countChanged();
