@@ -11,12 +11,13 @@ qt_standard_project_setup()
 qt_add_executable(scarlet-launcher
     src/app_window.cpp
     src/app_window.h
-    src/icon_provider.h
-    src/theme_icon_provider.h
     src/main.cpp
     src/model/list_model.cpp
     src/model/list_model.h
     src/model/store.h
+
+    src/provider/icon_provider.h
+    src/provider/theme_icon_provider.h
 
     src/wine_worker.cpp
     src/wine_worker.h

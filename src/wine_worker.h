@@ -5,6 +5,8 @@
 
 #include <memory>
 
+namespace scarlet {
+
 /**
  * Worker thread for setting up a wine prefix and running winetricks.
  *
@@ -37,3 +39,5 @@ class WineWorker : public QThread
   private slots:
     void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 };
+
+} // namespace scarlet

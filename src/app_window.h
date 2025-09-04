@@ -7,6 +7,8 @@
 #include <QtCore>
 #include <memory>
 
+namespace scarlet {
+
 class AppWindow : public QObject
 {
     Q_OBJECT
@@ -83,3 +85,5 @@ class AppWindow : public QObject
     QString findConfigurator(const QString& gamePath);
     int calculateSimilarity(const QString& gameName, const QString& fileName);
 };
+
+} // namespace scarlet

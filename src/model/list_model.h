@@ -6,11 +6,18 @@
 
 namespace scarlet::model {
 
+enum class Source
+{
+    THCRAP, // Game added via THCRAP
+    MANUAL  // Game added manually
+};
+
 /**
  * The Touhou game to launch
  **/
-struct GameInfo
+struct GameMetadata
 {
+    Source source;
     QString name;
     QString path;
     bool hasConfigurator = false;
@@ -27,7 +34,8 @@ class ListModel : public QAbstractListModel
   public:
     enum Roles
     {
-        NameRole = Qt::UserRole + 1,
+        SourceRole = Qt::UserRole + 1,
+        NameRole,
         PathRole,
         HasConfiguratorRole,
         PatchesRole
@@ -41,14 +49,21 @@ class ListModel : public QAbstractListModel
     QHash<int, QByteArray> roleNames() const override;
 
     // Custom methods callable from QML
-    Q_INVOKABLE void addItem(const QString& name, const QString& path);
-    Q_INVOKABLE void addItemWithPatches(const QString& name,
+    Q_INVOKABLE void addItem(const Source& source,
+                             const QString& name,
+                             const QString& path);
+
+    Q_INVOKABLE void addItemWithPatches(const Source& source,
+                                        const QString& name,
                                         const QString& path,
                                         const QStringList& patches);
 
     Q_INVOKABLE void remove(int index);
     Q_INVOKABLE int count() const;
     void sortByName();
+
+    // Extracting metadata
+    Q_INVOKABLE Source getGameSource(int index) const;
     Q_INVOKABLE QString getGameName(int index) const;
     Q_INVOKABLE QString getGamePath(int index) const;
 
@@ -56,7 +71,7 @@ class ListModel : public QAbstractListModel
     void countChanged();
 
   private:
-    QList<GameInfo> m_games;
+    QList<GameMetadata> m_games;
 
     bool checkForConfigurator(const QString& path);
     int calculateSimilarity(const QString& gameName, const QString& fileName);

@@ -59,7 +59,6 @@ RowLayout {
         
         var friendlyName = gameNames[gameId] || originalName;
         
-        // Add (EN) suffix if original name contains "en"
         if (originalName.toLowerCase().includes("en")) {
             localization = "us";
         }
@@ -85,7 +84,7 @@ RowLayout {
                 if (notTouhou) {
                     return "qrc:/ScarletLauncher/resources/ui/icon_warning.png"
                 }
-                return "https://flagsapi.com/" + localization.toUpperCase() + "/flat/64.png"
+                return "https://flagcdn.com/w20/%1.png".arg(localization)
             }
             fillMode: Image.PreserveAspectFit
         }

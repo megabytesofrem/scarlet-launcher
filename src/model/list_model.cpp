@@ -28,7 +28,7 @@ QVariant ListModel::data(const QModelIndex& index, int role) const
         return QVariant();
     }
 
-    const GameInfo& game = m_games[index.row()];
+    const GameMetadata& game = m_games[index.row()];
 
     switch (role) {
         case NameRole:
@@ -57,12 +57,12 @@ QHash<int, QByteArray> ListModel::roleNames() const
     return roles;
 }
 
-void ListModel::addItem(const QString& name, const QString& path)
+void ListModel::addItem(const Source& source, const QString& name, const QString& path)
 {
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
     bool hasConfig = checkForConfigurator(path);
 
-    m_games.append({ name, path, hasConfig, QStringList() });
+    m_games.append({ source, name, path, hasConfig, QStringList() });
     endInsertRows();
 
     qDebug() << "Added game:" << name << "at" << path
@@ -70,14 +70,15 @@ void ListModel::addItem(const QString& name, const QString& path)
     emit countChanged();
 }
 
-void ListModel::addItemWithPatches(const QString& name,
+void ListModel::addItemWithPatches(const Source& source,
+                                   const QString& name,
                                    const QString& path,
                                    const QStringList& patches)
 {
     beginInsertRows(QModelIndex(), rowCount(), rowCount());
     bool hasConfig = checkForConfigurator(path);
 
-    m_games.append({ name, path, hasConfig, patches });
+    m_games.append({ source, name, path, hasConfig, patches });
     endInsertRows();
 
     qDebug() << "Added game with patches:" << name << "at" << path
@@ -95,6 +96,17 @@ void ListModel::remove(int index)
     m_games.removeAt(index);
     endRemoveRows();
 
+    // Special case for THCRAP managed games since we need to remove the shortcut
+    // to prevent Scarlet from re-adding it
+    if (m_games[index].source == Source::THCRAP) {
+        // Remove the shortcut for THCRAP managed games
+        scarlet::store::removeEntry(removedName);
+
+        QFileInfo fileInfo(m_games[index].path);
+
+        // TODO: FIGURE OUT AFTER TAKEN SHIT
+    }
+
     scarlet::store::removeEntry(removedName);
 
     qDebug() << "Removed game:" << removedName;
@@ -110,26 +122,36 @@ void ListModel::sortByName()
 {
     beginResetModel();
 
-    std::sort(m_games.begin(), m_games.end(), [](const GameInfo& a, const GameInfo& b) {
-        // Extract th## numbers for proper Touhou sorting
-        QRegularExpression thRegex("th(\\d{2})");
-        auto matchA = thRegex.match(a.name);
-        auto matchB = thRegex.match(b.name);
+    std::sort(
+      m_games.begin(), m_games.end(), [](const GameMetadata& a, const GameMetadata& b) {
+          // Extract th## numbers for proper Touhou sorting
+          QRegularExpression thRegex("th(\\d{2})");
+          auto matchA = thRegex.match(a.name);
+          auto matchB = thRegex.match(b.name);
 
-        if (matchA.hasMatch() && matchB.hasMatch()) {
-            int numA = matchA.captured(1).toInt();
-            int numB = matchB.captured(1).toInt();
-            return numA < numB; // Sort by th number
-        }
+          if (matchA.hasMatch() && matchB.hasMatch()) {
+              int numA = matchA.captured(1).toInt();
+              int numB = matchB.captured(1).toInt();
+              return numA < numB; // Sort by th number
+          }
 
-        // Fallback to alphabetical for non-Touhou games
-        return a.name < b.name;
-    });
+          // Fallback to alphabetical for non-Touhou games
+          return a.name < b.name;
+      });
 
     endResetModel();
     emit countChanged();
 }
 
+Q_INVOKABLE
+Source ListModel::getGameSource(int index) const
+{
+    if (index < 0 || index >= m_games.count())
+        return Source::MANUAL;
+    return m_games[index].source;
+}
+
+Q_INVOKABLE
 QString ListModel::getGameName(int index) const
 {
     if (index < 0 || index >= m_games.count())
@@ -137,6 +159,7 @@ QString ListModel::getGameName(int index) const
     return m_games[index].name;
 }
 
+Q_INVOKABLE
 QString ListModel::getGamePath(int index) const
 {
     if (index < 0 || index >= m_games.count())

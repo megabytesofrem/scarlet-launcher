@@ -4,6 +4,11 @@
 #include <QPixmap>
 #include <QQuickImageProvider>
 
+namespace scarlet::provider {
+
+/**
+ * System theme icon provider for using system icons in custom components.
+ */
 class ThemeIconProvider : public QQuickImageProvider
 {
   public:
@@ -41,3 +46,5 @@ class ThemeIconProvider : public QQuickImageProvider
         return pixmap.toImage();
     }
 };
+
+} // namespace scarlet::provider

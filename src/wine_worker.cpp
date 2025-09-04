@@ -4,7 +4,7 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 
-using namespace scarlet;
+namespace scarlet {
 
 WineWorker::WineWorker(QObject* parent, const QString& winePrefixPath)
   : QThread(parent)
@@ -205,3 +205,5 @@ void WineWorker::onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus
 
     quit();
 }
+
+} // namespace scarlet

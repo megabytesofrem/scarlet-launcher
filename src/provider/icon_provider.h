@@ -1,11 +1,13 @@
 #pragma once
 
-#include "utils.h"
+#include "../utils.h"
 
 #include <QIcon>
 #include <QImage>
 #include <QImageReader>
 #include <QQuickImageProvider>
+
+namespace scarlet::provider {
 
 /**
  * Custom icon provider to extract the icon from the game exe
@@ -73,3 +75,5 @@ class IconProvider : public QQuickImageProvider
         return image;
     }
 };
+
+} // namespace scarlet::provider

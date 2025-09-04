@@ -6,6 +6,10 @@
 #include <algorithm>
 #include <vector>
 
+using Source = scarlet::model::Source;
+
+namespace scarlet {
+
 Q_INVOKABLE void AppWindow::appLoaded()
 {
     this->_installationPath = QString(QDir::homePath() + "/.scarlet");
@@ -31,7 +35,7 @@ Q_INVOKABLE void AppWindow::appLoaded()
 
     // Populate the model with games from the DB
     for (const auto& entry : entries) {
-        _gameModel->addItem(entry.first, entry.second);
+        _gameModel->addItem(entry.source, entry.name, entry.path);
     }
 
     _gameModel->sortByName();
@@ -169,11 +173,11 @@ Q_INVOKABLE void AppWindow::addGameFromPath(const QString& filePath)
     qDebug() << "File name of selected game:" << fileName;
 
     if (this->_gameModel != nullptr) {
-        this->_gameModel->addItem(fileName, filePath);
+        this->getModel()->addItem(Source::MANUAL, fileName, filePath);
         scarlet::store::addEntry("manual", fileName, filePath);
     }
 
-    this->_gameModel->sortByName();
+    this->getModel()->sortByName();
 }
 
 // THCRAP
@@ -306,7 +310,7 @@ void AppWindow::onThcrapClosed()
                 if (validTouhouName.match(baseName).hasMatch() &&
                     !scarlet::store::hasEntry(fileName)) {
 
-                    this->getModel()->addItem(fileName, fullPath);
+                    this->getModel()->addItem(Source::THCRAP, fileName, fullPath);
                     scarlet::store::addEntry("thcrap", fileName, fullPath);
                 }
 
@@ -493,4 +497,6 @@ void AppWindow::downloadTHCRAP()
 
     emit statusChanged("THCRAP downloaded and extracted successfully.");
     emit progressChanged(false);
+}
+
 }

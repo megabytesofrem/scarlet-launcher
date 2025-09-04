@@ -5,7 +5,11 @@
 #include <QSqlQuery>
 #include <QVariant>
 
+using Source = scarlet::model::Source;
+using GameInfo = scarlet::model::GameMetadata;
+
 namespace scarlet::store {
+
 inline bool openDatabase(const QString& path = "scarlet.db")
 {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE");
@@ -56,12 +60,16 @@ inline bool hasEntry(const QString& name)
     return query.value(0).toInt() > 0;
 }
 
-inline QList<QPair<QString, QString>> fetchEntries()
+inline QList<GameInfo> fetchEntries()
 {
-    QList<QPair<QString, QString>> entries;
-    QSqlQuery query("SELECT name, path FROM games");
+    QList<GameInfo> entries;
+    QSqlQuery query("SELECT * FROM games");
     while (query.next()) {
-        entries.append(qMakePair(query.value(0).toString(), query.value(1).toString()));
+        GameInfo info;
+        info.source = static_cast<Source>(query.value("source").toInt());
+        info.name = query.value("name").toString();
+        info.path = query.value("path").toString();
+        entries.append(info);
     }
     return entries;
 }
