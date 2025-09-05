@@ -4,7 +4,7 @@ project(scarlet-launcher)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Qml Quick Sql QuickControls2)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Qml Quick Sql QuickControls2 ShaderTools)
 
 qt_standard_project_setup()
 
@@ -33,6 +33,17 @@ file(GLOB_RECURSE QML_SOURCES
 
 message(STATUS "Found QML files: ${QML_SOURCES}")
 
+# Compile shaders to .qsb format
+qt_add_shaders(scarlet-launcher "shaders"
+    BATCHABLE
+    PRECOMPILE
+    OPTIMIZED
+    PREFIX
+        "/shaders"
+    FILES
+        "qml/shader/bullet.vert"
+        "qml/shader/bullet.frag"
+)
 
 qt_add_qml_module(scarlet-launcher
     URI ScarletLauncher
@@ -43,6 +54,7 @@ qt_add_qml_module(scarlet-launcher
         resources/icon.png
         resources/ui/icon_default.png
         resources/ui/icon_warning.png
+        resources/ui/particle.png
     RESOURCE_PREFIX /
 )
 
@@ -53,4 +65,5 @@ target_link_libraries(scarlet-launcher PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Qt6::Sql
+    Qt6::ShaderTools
 )

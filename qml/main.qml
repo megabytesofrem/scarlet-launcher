@@ -53,6 +53,7 @@ ApplicationWindow {
     Scarlet.About { id: aboutDialog }
 
     header: ToolBar {
+        visible: !isFirstTimeSetup && gameModel.count > 0
         padding: 0
 
         background: Rectangle {
@@ -113,109 +114,109 @@ ApplicationWindow {
         }
     }
 
-    ColumnLayout {
+    Item {
         anchors.fill: parent
-        spacing: 0
 
         // First time setup
         Loader {
             active: gameModel.count === 0 && isFirstTimeSetup
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.fillWidth: active
-            Layout.fillHeight: active
-            Layout.preferredWidth: active ? -1 : 0
-            Layout.preferredHeight: active ? -1 : 0
+            anchors.fill: parent
+            visible: active
             sourceComponent: Scarlet.FirstTimeSetupView {}
         }
 
         // Empty games view
         Loader {
             active: gameModel.count === 0 && !isFirstTimeSetup
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-            Layout.preferredWidth: active ? implicitWidth : 0
-            Layout.preferredHeight: active ? implicitHeight : 0
+            anchors.fill: parent
+            visible: active
             sourceComponent: Scarlet.EmptyGamesView {}
         }
 
-        // Game list view
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: 0
 
-        ScrollView {
-            padding: 0
-            Layout.margins: 5
-            Layout.fillHeight: true
-            Layout.fillWidth: true
+            // Game list view
 
-            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+            ScrollView {
+                padding: 0
+                Layout.margins: 5
+                Layout.fillHeight: true
+                Layout.fillWidth: true
 
-            ListView {
-                id: gameList
-                interactive: true
-                flickableDirection: Flickable.VerticalFlick
-                boundsBehavior: Flickable.StopAtBounds
-                flickDeceleration: 1500    // Make flick stop quickly
-                maximumFlickVelocity: 500  // Reduce flick sensitivity
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
-                visible: gameModel.count > 0
-                model: gameModel
+                ListView {
+                    id: gameList
+                    interactive: true
+                    flickableDirection: Flickable.VerticalFlick
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickDeceleration: 1500    // Make flick stop quickly
+                    maximumFlickVelocity: 500  // Reduce flick sensitivity
 
-                delegate: ItemDelegate {
-                    width: parent ? parent.width : 400
-                    height: 30
-                    highlighted: ListView.view.currentIndex === index
-                    onClicked: ListView.view.currentIndex = index
+                    visible: gameModel.count > 0
+                    model: gameModel
 
-                    Rectangle {
-                        anchors.fill: parent
+                    delegate: ItemDelegate {
+                        width: parent ? parent.width : 400
+                        height: 30
+                        highlighted: ListView.view.currentIndex === index
+                        onClicked: ListView.view.currentIndex = index
 
-                        color: highlighted ? Theme.primaryColor.darker(1.5) // selected color
-                                           : Theme.backgroundColor.darker(1.2) // normal color
-
-                        MouseArea {
-                            id: mouseArea
+                        Rectangle {
                             anchors.fill: parent
-                            acceptedButtons: Qt.LeftButton
-                            hoverEnabled: false
-                            preventStealing: true
 
-                            onClicked: {
-                                gameList.currentIndex = index
-                            }
+                            color: highlighted ? Theme.primaryColor.darker(1.5) // selected color
+                                            : Theme.backgroundColor.darker(1.2) // normal color
 
-                            onDoubleClicked: {
-                                gameList.currentIndex = index
-                                appWindow.launchGame(model.path)
+                            MouseArea {
+                                id: mouseArea
+                                anchors.fill: parent
+                                acceptedButtons: Qt.LeftButton
+                                hoverEnabled: false
+                                preventStealing: true
+
+                                onClicked: {
+                                    gameList.currentIndex = index
+                                }
+
+                                onDoubleClicked: {
+                                    gameList.currentIndex = index
+                                    appWindow.launchGame(model.path)
+                                }
                             }
                         }
-                    }
 
-                    Scarlet.GameListItem {
-                        index: index
-                        modelBinding: model
-                        onRemoveRequested: function(gamePath) {
-                            for (let i = 0; i < gameModel.count; i++) {
-                                if (gameModel.getGamePath(i) === gamePath) {
-                                    gameModel.remove(i)
-                                    break
+                        Scarlet.GameListItem {
+                            index: index
+                            modelBinding: model
+                            onRemoveRequested: function(gamePath) {
+                                for (let i = 0; i < gameModel.count; i++) {
+                                    if (gameModel.getGamePath(i) === gamePath) {
+                                        gameModel.remove(i)
+                                        break
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
-        // Spacer to push buttons to bottom
-        Item {
-            visible: gameModel.count === 0
-            Layout.fillHeight: true
-        }
+            // Spacer to push buttons to bottom
+            Item {
+                visible: gameModel.count === 0
+                Layout.fillHeight: true
+            }
 
-        // Status display
-        Scarlet.StatusDisplay {
-            visible: !isFirstTimeSetup && (isWorking || currentStatus !== "Idle")
-            statusValue: currentStatus
-            busy: true // bind later on
+            // Status display
+            Scarlet.StatusDisplay {
+                visible: !isFirstTimeSetup && (isWorking || currentStatus !== "Idle")
+                statusValue: currentStatus
+                busy: true // bind later on
+            }
         }
     }
 
