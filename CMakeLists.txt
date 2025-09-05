@@ -25,6 +25,8 @@ qt_add_executable(scarlet-launcher
     src/utils.h
 )
 
+set_target_properties(scarlet-launcher PROPERTIES OUTPUT_NAME scarlet)
+
 # Automatically find all QML files
 file(GLOB_RECURSE QML_SOURCES 
     RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -69,3 +71,13 @@ target_link_libraries(scarlet-launcher PRIVATE
     Qt6::Sql
     Qt6::ShaderTools
 )
+
+# Install, will need to figure out Flatpak packaging later for Steam Deck
+install(TARGETS scarlet-launcher DESTINATION bin)
+install(FILES resources/icon.png DESTINATION share/icons/hicolor/256x256/apps RENAME scarlet.png)
+install(FILES resources/Scarlet.desktop DESTINATION share/applications)
+
+install(CODE "
+    message(STATUS \"Installation complete!\")
+    message(STATUS \"Make sure /usr/local/bin is in your PATH to run 'scarlet' from anywhere.\")
+")

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Scarlet
+Comment=THCRAP powered launcher for Touhou games for Linux.
+Exec=scarlet
+Icon=scarlet
+Terminal=false
+Type=Application
+Categories=Game;
+StartupWMClass=scarlet

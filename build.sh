@@ -1,7 +1,5 @@
 #!/bin/bash
-
 # Scarlet Launcher Build Script
-# This script configures and builds the C++ Qt application
 
 set -e  # Exit on any error
 
@@ -31,11 +29,11 @@ cmake "${PROJECT_DIR}" -DCMAKE_BUILD_TYPE="${BUILD_TYPE}"
 
 # Build the project
 echo "Building project..."
-make -j$(nproc)
+cmake --build . --parallel $(nproc)
 
 echo "Build completed successfully!"
-echo "Executable location: ${BUILD_DIR}/scarlet-launcher"
+echo "Executable location: ${BUILD_DIR}/scarlet"
 echo ""
 echo "To run the application:"
 echo "  cd ${BUILD_DIR}"
-echo "  ./scarlet-launcher"
+echo "  ./scarlet"
