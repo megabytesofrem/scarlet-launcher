@@ -51,6 +51,8 @@ qt_add_qml_module(scarlet-launcher
     QML_FILES ${QML_SOURCES}
     RESOURCES
         qml/qmldir
+        qml/components/helpers.js
+
         resources/icon.png
         resources/ui/icon_default.png
         resources/ui/icon_warning.png
