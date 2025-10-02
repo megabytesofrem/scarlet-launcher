@@ -26,12 +26,35 @@ Item {
         radius: 8
 
         Image {
-            id: gameCover
+            id: coverImage
+            visible: false
 
             source: root.imageUrl
             anchors.fill: parent
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
+        }
+
+        MultiEffect {
+            anchors.fill: parent
+            source: coverImage
+            maskEnabled: true
+            maskSource: coverMask
+        }
+
+        Item {
+            id: coverMask
+            width: background.width
+            height: background.height
+            layer.enabled: true
+            visible: false
+
+            Rectangle {
+                width: background.width
+                height: background.height
+                radius: background.radius
+                color: "white"
+            }
         }
 
         Rectangle {
@@ -42,7 +65,7 @@ Item {
                 bottom: parent.bottom
             }
             height: 30
-            color: "#80000000"
+            color: '#99000000'
             radius: 0
             border.color: "black"
             border.width: 1
@@ -115,11 +138,11 @@ Item {
             Helpers.extractGridImage(friendlyName, function (url) {
                 if (url) {
                     imageUrl = url;
-                    gameCover.fillMode = Image.PreserveAspectCrop;
+                    coverImage.fillMode = Image.PreserveAspectCrop;
                 } else {
                     // Fallback to icon if no grid image found
                     imageUrl = "image://icons/" + root.modelBinding.path;
-                    gameCover.fillMode = Image.Pad;
+                    coverImage.fillMode = Image.Pad;
                 }
             });
         }
