@@ -4,6 +4,8 @@ import QtQuick.Controls
 import ScarletLauncher 1.0
 
 Button {
+    id: root
+
     property string iconName: ""
 
     property bool primaryAction: false
@@ -11,31 +13,31 @@ Button {
 
     function getIconSource() {
         if (hasIcon) {
-            return "image://theme_icon/" + iconName
+            return "image://theme_icon/" + iconName;
         }
-        return ""
+        return "";
     }
 
     padding: 5
 
     background: Rectangle {
-        color: primaryAction ? Theme.primaryColor.darker(1.25) : Theme.backgroundColor.darker(1.25)
+        color: root.primaryAction ? Theme.primaryColor.darker(1.25) : Theme.backgroundColor.darker(1.25)
         radius: Theme.buttonRadius
     }
 
     contentItem: Row {
-        spacing: parent.iconName === "" ? 0 : 4
+        spacing: root.iconName === "" ? 0 : 4
 
         Image {
-            visible: hasIcon
-            source: getIconSource()
-            width: hasIcon ? 16 : 0
+            visible: root.hasIcon
+            source: root.getIconSource()
+            width: root.hasIcon ? 16 : 0
             height: 16
             fillMode: Image.PreserveAspectFit
         }
 
         Text {
-            text: qsTr(parent.parent.text)
+            text: qsTr(root.text)
             color: Theme.textColor
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
@@ -46,17 +48,17 @@ Button {
 
     onHoveredChanged: {
         if (primaryAction) {
-            background.color = hovered ? Theme.primaryColor.lighter(1.2) : Theme.primaryColor.darker(1.25)
+            background.color = hovered ? Theme.primaryColor.lighter(1.2) : Theme.primaryColor.darker(1.25);
         } else {
-            background.color = hovered ? Theme.backgroundColor.lighter(1.2) : Theme.backgroundColor.darker(1.25)
+            background.color = hovered ? Theme.backgroundColor.lighter(1.2) : Theme.backgroundColor.darker(1.25);
         }
     }
 
     onPressedChanged: {
         if (primaryAction) {
-            background.color = pressed ? Theme.primaryColor.lighter(1.2) : Theme.primaryColor.darker(1.25)
+            background.color = pressed ? Theme.primaryColor.lighter(1.2) : Theme.primaryColor.darker(1.25);
         } else {
-            background.color = pressed ? Theme.backgroundColor.lighter(1.2) : Theme.backgroundColor.darker(1.25)
+            background.color = pressed ? Theme.backgroundColor.lighter(1.2) : Theme.backgroundColor.darker(1.25);
         }
     }
 }

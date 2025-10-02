@@ -12,6 +12,7 @@
 ## Installation
 
 Installation is handled via `CMake`.
+
 By default `cmake --install build` will install to `/usr/local/bin`.
 
 To install to a different directory, set `-DCMAKE_INSTALL_PREFIX` e.g

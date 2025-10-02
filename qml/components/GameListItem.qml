@@ -6,12 +6,15 @@ import ScarletLauncher 1.0
 import "helpers.js" as Helpers
 
 RowLayout {
+    id: root
+
     // Model binding from main.qml
     property var modelBinding
-    
+    property var appWindow: appWindow
+
     // Localization. Default is jp, but will be changed when auto-detected
     property string localization: "jp"
-    
+
     // Indicates if the game is not a Touhou game, incase the user made a mistake
     property bool notTouhou: false
     property bool rowHasConfigurator: modelBinding ? modelBinding.hasConfigurator : false
@@ -37,19 +40,17 @@ RowLayout {
         Image {
             anchors.fill: parent
             source: {
-                if (notTouhou) {
-                    return "qrc:/ScarletLauncher/resources/ui/icon_warning.png"
+                if (Helpers.notTouhou) {
+                    return "qrc:/ScarletLauncher/resources/ui/icon_warning.png";
                 }
-                return "https://flagcdn.com/w20/%1.png".arg(localization)
+                return "https://flagcdn.com/w20/%1.png".arg(Helpers.localization);
             }
             fillMode: Image.PreserveAspectFit
         }
 
         // Tooltip
         ToolTip.visible: iconHoverArea.containsMouse
-        ToolTip.text: notTouhou ? "This game does not appear to be a Touhou game." 
-                                : localization == "jp" 
-                                ? "Original localization" : "THCRAP localization (" + localization + ")"
+        ToolTip.text: Helpers.notTouhou ? "This game does not appear to be a Touhou game." : Helpers.localization == "jp" ? "Original localization" : "THCRAP localization (" + Helpers.localization + ")"
     }
 
     Rectangle {
@@ -59,13 +60,13 @@ RowLayout {
 
         Image {
             anchors.fill: parent
-            source: modelBinding ? "image://icons/" + modelBinding.path : ""
+            source: root.modelBinding ? "image://icons/" + root.modelBinding.path : ""
             fillMode: Image.PreserveAspectFit
         }
     }
 
     Text {
-        text: modelBinding ? Helpers.convertFriendlyName(modelBinding.name) || "Unknown Game" : "Unknown Game"
+        text: root.modelBinding ? Helpers.convertFriendlyName(root.modelBinding.name) || "Unknown Game" : "Unknown Game"
         color: "white"
         Layout.fillWidth: true
     }
@@ -76,18 +77,13 @@ RowLayout {
         Button {
             icon.name: "settings-configure"
             icon.color: "white"
-            visible: rowHasConfigurator
+            visible: root.rowHasConfigurator
             Layout.fillHeight: true
             Layout.preferredWidth: height
 
             onClicked: {
-                console.log("=== BUTTON CLICK DEBUG ===");
-                console.log("Row index:", index);
-                console.log("Model name:", modelBinding ? modelBinding.name : "undefined");
-                console.log("Model path:", modelBinding ? modelBinding.path : "undefined");
-                
-                if (modelBinding) {
-                    appWindow.launchConfigurator(modelBinding.path)
+                if (root.modelBinding) {
+                    root.appWindow.launchConfigurator(root.modelBinding.path);
                 }
             }
 
@@ -100,14 +96,13 @@ RowLayout {
             ToolTip.text: "Launch game configurator"
         }
 
-
         Button {
             icon.name: "list-remove-symbolic"
             icon.color: "red"
             Layout.fillHeight: true
             Layout.preferredWidth: height
 
-            onClicked: removeRequested(modelBinding.path)
+            onClicked: root.removeRequested(root.modelBinding.path)
 
             background: Rectangle {
                 color: Theme.backgroundColor.darker(1.2)

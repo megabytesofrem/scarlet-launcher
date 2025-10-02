@@ -12,7 +12,8 @@
                 "/usr/include/qt6/QtSql",
                 "/usr/include/qt6/QtQuick",
                 "/usr/include/qt6/QtWidgets",
-                "/usr/include/qt6/QtQuickControls2"
+                "/usr/include/qt6/QtQuickControls2",
+                "/usr/include/qt6/QtNetwork"
             ],
             "defines": [],
             "compilerPath": "/usr/lib64/ccache/gcc",

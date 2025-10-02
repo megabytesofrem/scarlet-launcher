@@ -5,6 +5,8 @@ import QtQuick.Layouts
 import ScarletLauncher 1.0
 
 RowLayout {
+    id: root
+
     property string statusValue: ""
     property bool busy: true
 
@@ -13,7 +15,7 @@ RowLayout {
     Layout.margins: 5
 
     Text {
-        text: statusValue == "" ? "Status: Idle" : "Status: " + statusValue
+        text: root.statusValue == "" ? "Status: Idle" : "Status: " + root.statusValue
         Layout.fillWidth: true
         color: "white"
     }
@@ -34,6 +36,7 @@ RowLayout {
 
         // Override the “fill” for both determinate and indeterminate
         contentItem: Item {
+            id: contentItem
             anchors.fill: parent
 
             Rectangle {
@@ -51,7 +54,7 @@ RowLayout {
                 target: chunk
                 property: "x"
                 from: 0
-                to: parent.width
+                to: contentItem.width
                 duration: 1200
                 loops: Animation.Infinite
                 running: true
@@ -59,7 +62,7 @@ RowLayout {
             }
 
             Component.onCompleted: {
-                idleAnim.running = true
+                idleAnim.running = true;
             }
         }
     }

@@ -4,7 +4,9 @@ project(scarlet-launcher)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Qml Quick Sql QuickControls2 ShaderTools)
+set(QT_QML_GENERATE_QMLLS_INI TRUE)
+
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Qml Quick Sql QuickControls2 QuickEffects ShaderTools)
 
 qt_standard_project_setup()
 
@@ -66,7 +68,9 @@ target_link_libraries(scarlet-launcher PRIVATE
     Qt6::Core
     Qt6::Widgets
     Qt6::Qml
+    Qt6::Network
     Qt6::Quick
+    Qt6::QuickEffects
     Qt6::QuickControls2
     Qt6::Sql
     Qt6::ShaderTools
