@@ -33,8 +33,9 @@ StackView {
                 flickDeceleration: 1500
                 maximumFlickVelocity: 500
 
-                model: root.modelBinding
+                model: root.modelBinding // qmllint disable unqualified
 
+                // qmllint disable unqualified
                 delegate: ItemDelegate {
                     width: parent ? parent.width : 400
                     height: 30

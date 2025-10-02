@@ -31,8 +31,8 @@ int main(int argc, char* argv[])
     // Set the icon. This only works on X11
     app.setWindowIcon(QIcon("qrc:/ScarletLauncher/resources/icon.png"));
 
-    const QString authPlaceholder = "AUTH_KEY_PLACEHOLDER";
-    engine.rootContext()->setContextProperty("sgdAuthKey", authPlaceholder);
+    const QString authKey = "REPLACE_WITH_YOUR_OWN_KEY";
+    engine.rootContext()->setContextProperty("sgdAuthKey", authKey);
 
     engine.rootContext()->setContextProperty("appWindow", &appWindow);
     engine.rootContext()->setContextProperty("gameModel", appWindow.getModel());

@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import ScarletLauncher 1.0
+import ScarletLauncher 1.0 as Scarlet
 import "helpers.js" as Helpers
 
 RowLayout {
@@ -27,8 +27,8 @@ RowLayout {
 
     // Use rectangle to force the size to 24x24
     Rectangle {
-        width: 24
-        height: 24
+        implicitWidth: 24
+        implicitHeight: 24
         color: "transparent"
 
         MouseArea {
@@ -54,8 +54,8 @@ RowLayout {
     }
 
     Rectangle {
-        width: 24
-        height: 24
+        implicitWidth: 24
+        implicitHeight: 24
         color: "transparent"
 
         Image {
@@ -88,7 +88,7 @@ RowLayout {
             }
 
             background: Rectangle {
-                color: Theme.backgroundColor.darker(1.2)
+                color: Scarlet.Theme.backgroundColor.darker(1.2)
                 height: parent.height
             }
 
@@ -105,7 +105,7 @@ RowLayout {
             onClicked: root.removeRequested(root.modelBinding.path)
 
             background: Rectangle {
-                color: Theme.backgroundColor.darker(1.2)
+                color: Scarlet.Theme.backgroundColor.darker(1.2)
                 height: parent.height
             }
 

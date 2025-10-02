@@ -9,7 +9,7 @@ Item {
     anchors.fill: parent
 
     // --- BACKGROUND LAYER ---
-    
+
     Rectangle {
         id: backgroundRect
         anchors.left: parent.left
@@ -23,15 +23,15 @@ Item {
 
         ShaderEffect {
             anchors.fill: parent
-            
+
             // Properties that get passed to the shaders as uniforms
             property real time: 0.0        // Time for animation
             property size resolution: Qt.size(root.width, root.height)
-            
+
             // Load compiled shaders (.qsb files)
             vertexShader: "qrc:/shaders/qml/shader/bullet.vert.qsb"
             fragmentShader: "qrc:/shaders/qml/shader/bullet.frag.qsb"
-            
+
             // Animation to update time property
             NumberAnimation on time {
                 from: 0.0
@@ -39,7 +39,7 @@ Item {
                 duration: 1000000  // Very long duration for continuous animation
                 loops: Animation.Infinite
             }
-            
+
             // Update resolution when window size changes
             onWidthChanged: resolution = Qt.size(width, height)
             onHeightChanged: resolution = Qt.size(width, height)
@@ -58,7 +58,9 @@ Item {
             z: 2
 
             // Top spacer to vertically center content
-            Item { Layout.fillHeight: true }
+            Item {
+                Layout.fillHeight: true
+            }
 
             Text {
                 id: setupText
@@ -95,10 +97,10 @@ Item {
                 property bool updateScheduled: false
 
                 function scheduleUpdate(newText) {
-                    pendingText = newText
+                    pendingText = newText;
                     if (!updateScheduled) {
-                        updateScheduled = true
-                        updateTimer.start()
+                        updateScheduled = true;
+                        updateTimer.start();
                     }
                 }
 
@@ -106,13 +108,13 @@ Item {
                     id: updateTimer
                     interval: 100
                     onTriggered: {
-                        logArea.text = logScrollView.pendingText
-                        logScrollView.updateScheduled = false
+                        logArea.text = logScrollView.pendingText;
+                        logScrollView.updateScheduled = false;
 
                         // Auto-scroll to bottom
-                        Qt.callLater(function() {
-                            logArea.cursorPosition = logArea.length - 1
-                        })
+                        Qt.callLater(function () {
+                            logArea.cursorPosition = logArea.length - 1;
+                        });
                     }
                 }
 
@@ -136,11 +138,12 @@ Item {
                     text: ""
                 }
 
+                // qmllint disable unqualified
                 Connections {
                     target: appWindow
 
                     function onLogMessageChanged() {
-                        logScrollView.scheduleUpdate(appWindow.logMessage || "")
+                        logScrollView.scheduleUpdate(appWindow.logMessage || "");
                     }
                 }
             }

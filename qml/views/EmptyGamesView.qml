@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import ScarletLauncher 1.0 as Scarlet
 
 Item {
+    id: root
     anchors.fill: parent
 
     ColumnLayout {

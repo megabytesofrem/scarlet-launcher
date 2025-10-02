@@ -16,8 +16,8 @@ Dialog {
         spacing: 16
 
         Rectangle {
-            width: 48
-            height: 48
+            implicitWidth: 48
+            implicitHeight: 48
             color: "transparent"
 
             Image {
@@ -28,14 +28,12 @@ Dialog {
         }
 
         TextArea {
-            text: "THCRAP powered launcher for Touhou games for Linux<br>" +
-                  "written in QT/QML and C++.<br><br>" +
-                  "Scarlet is free software, but if you want to <a href=\"https://liberapay.com/megabytesofrem/donate\">support me you can</a>"
+            text: "THCRAP powered launcher for Touhou games for Linux<br>" + "written in QT/QML and C++.<br><br>" + "Scarlet is free software, but if you want to <a href=\"https://liberapay.com/megabytesofrem/donate\">support me you can</a>"
             color: "white"
             readOnly: true
             wrapMode: Text.WrapAnywhere
             textFormat: TextEdit.RichText
-            onLinkActivated: Qt.openUrlExternally(link)
+            onLinkActivated: link => Qt.openUrlExternally(link)
         }
     }
 }

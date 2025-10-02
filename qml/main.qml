@@ -5,6 +5,7 @@ import QtQuick.Dialogs
 
 import ScarletLauncher 1.0 as Scarlet
 
+// qmllint disable unqualified
 ApplicationWindow {
     id: rootWindow
 
@@ -12,9 +13,9 @@ ApplicationWindow {
     minimumWidth: 500
     minimumHeight: 300
     title: "Scarlet"
-    color: Theme.backgroundColor
+    color: Scarlet.Theme.backgroundColor
 
-    palette.highlight: Theme.primaryColor
+    palette.highlight: Scarlet.Theme.primaryColor
 
     property string currentStatus: "Idle"
     property string viewMode: "list"
@@ -31,17 +32,19 @@ ApplicationWindow {
     Connections {
         target: appWindow
 
-        onFirstTimeSetup: isFirstTimeSetup = true
+        function onFirstTimeSetup() {
+            isFirstTimeSetup = true;
+        }
 
-        onStatusChanged: function (status) {
+        function onStatusChanged(status) {
             currentStatus = status;
         }
 
-        onProgressChanged: function (visible) {
+        function onProgressChanged(visible) {
             isWorking = visible;
         }
 
-        onWineSetupFinished: function (success) {
+        function onWineSetupFinished(success) {
             if (success) {
                 // Wine setup completed successfully
                 console.log("Wine setup completed successfully.");
@@ -62,7 +65,7 @@ ApplicationWindow {
         padding: 0
 
         background: Rectangle {
-            color: Theme.backgroundColor.darker(1.5)
+            color: Scarlet.Theme.backgroundColor.darker(1.5)
             border.width: 0
         }
 
@@ -80,7 +83,7 @@ ApplicationWindow {
                 // Layout.margins: 8
 
                 background: Rectangle {
-                    color: Theme.primaryColor.darker(1.25)
+                    color: Scarlet.Theme.primaryColor.darker(1.25)
                 }
 
                 onClicked: {

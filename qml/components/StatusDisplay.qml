@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
-import ScarletLauncher 1.0
+import ScarletLauncher 1.0 as Scarlet
 
 RowLayout {
     id: root
@@ -24,13 +24,13 @@ RowLayout {
         id: progress
         from: 0
         to: 1
-        width: 40
-        height: 10
+        implicitWidth: 40
+        implicitHeight: 10
         indeterminate: true
 
         // Override background
         background: Rectangle {
-            color: Theme.backgroundColor
+            color: Scarlet.Theme.backgroundColor
             radius: 10
         }
 
@@ -45,7 +45,7 @@ RowLayout {
                 anchors.bottom: parent.bottom
                 width: parent.width * 0.3
                 x: 0
-                color: Theme.primaryColor
+                color: Scarlet.Theme.primaryColor
                 radius: 2
             }
 
