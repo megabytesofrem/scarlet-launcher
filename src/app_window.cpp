@@ -13,6 +13,20 @@ namespace scarlet {
 Q_INVOKABLE void AppWindow::appLoaded()
 {
     this->_installationPath = QString(QDir::homePath() + "/.scarlet");
+
+    // Create the installation directory if it doesn't exist
+    // to avoid potential error if the program wants to write to a non-existent
+    // directory
+    QDir installDir(this->_installationPath);
+    if (!installDir.exists()) {
+        if (!installDir.mkpath(".")) {
+            qCritical() << "Failed to create installation directory: " << this->_installationPath;
+            emit statusChanged("Failed to create installation directory");
+            return;
+        }
+        qDebug() << "Created installation directory:" << this->_installationPath;
+    }
+
     this->_latestRelease = scarlet::utils::getLatestGithubRelease("thpatch/thcrap");
     this->_thcrapDownloadURL =
       QString("https://github.com/thpatch/thcrap/releases/download/%1/thcrap.zip")

@@ -10,6 +10,10 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network Qml Quick Sql QuickCon
 
 qt_standard_project_setup()
 
+if(COMMAND qt_policy)
+    qt_policy(SET QTP0004 NEW)
+endif()
+
 qt_add_executable(scarlet-launcher
     src/app_window.cpp
     src/app_window.h
